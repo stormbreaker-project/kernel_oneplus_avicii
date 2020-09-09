@@ -14,31 +14,6 @@ static int cmdline_proc_show(struct seq_file *m, void *v)
 	return 0;
 }
 
-#ifdef REMOVE_SAFETYNET_FLAGS
-static void remove_flag(char *cmd, const char *flag)
-{
-	size_t flag_len, val_len;
-	char *start, *end;
-
-	start = strstr(cmd, flag);
-	if (!start)
-		return;
-
-	flag_len = strlen(flag);
-	val_len = strlen(val);
-	end = start + flag_len + strcspn(start + flag_len, " ");
-	memmove(start + flag_len + val_len, end, strlen(end) + 1);
-	memcpy(start + flag_len, val, val_len);
-}
-
-static void patch_safetynet_flags(char *cmd)
-{
-	remove_flag(cmd, "androidboot.veritymode=");
-}
-#endif
-
-#if 1
-
 static char *padding = "                ";
 
 static void replace_flag(char *cmd, const char *flag, const char *flag_new)
@@ -76,28 +51,22 @@ static void replace_safetynet_flags(char *cmd)
 			  "androidboot.secboot=enabled ");
 	replace_flag(cmd, "androidboot.verifiedbootstate=orange",
 			  "androidboot.verifiedbootstate=green ");
-#ifndef REMOVE_SAFETYNET_FLAGS
 	replace_flag(cmd, "androidboot.veritymode=logging",
 			  "androidboot.veritymode=enforcing");
 	replace_flag(cmd, "androidboot.veritymode=eio",
 			  "androidboot.veritymode=enforcing");
-#endif
 
 }
-#endif
 
 static int __init proc_cmdline_init(void)
 {
     strcpy(new_command_line, saved_command_line);
 
 	/*
-	 * Remove/replace various flags from command line seen by userspace in order to
+	 * Replace various flags from command line seen by userspace in order to
 	 * pass SafetyNet CTS check.
 	 */
 	replace_safetynet_flags(new_command_line);
-#ifdef REMOVE_SAFETYNET_FLAGS
-	remove_safetynet_flags(new_command_line);
-#endif
 
 	proc_create_single("cmdline", 0, NULL, cmdline_proc_show);
 	return 0;
