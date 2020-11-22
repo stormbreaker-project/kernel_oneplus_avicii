@@ -530,9 +530,10 @@ static struct audit_entry *audit_data_to_entry(struct audit_rule_data *data,
 		case AUDIT_WATCH:
 			str = audit_unpack_string(&bufp, &remain, f_val);
 			if (IS_ERR(str)) {
-				err = PTR_ERR(str);
+				err = PTR_ERR(str)
 				goto exit_free;
 			}
+
 			err = audit_to_watch(&entry->rule, str, f_val, f->op);
 			if (err) {
 				kfree(str);
