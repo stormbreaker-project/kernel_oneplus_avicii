@@ -5,6 +5,12 @@
 #include "lito-thermal-overlay.dtsi"
 
 &soc {
+	oem_serial_pinctrl {
+        	compatible = "oem,oem_serial_pinctrl";
+        	pinctrl-names = "uart_pinctrl_active","uart_pinctrl_deactive";
+        	pinctrl-0 = <&qupv3_se2_2uart_active>;
+        	pinctrl-1 = <&qupv3_se2_2uart_sleep>;
+    	};
 	gpio_keys {
 		compatible = "gpio-keys";
 		label = "gpio-keys";
@@ -144,12 +150,9 @@
 		status = "okay";
 	};
 };
+
 &qupv3_se2_2uart {
     compatible = "qcom,msm-geni-console-oem";
-};
-&usb2_phy0 {
-	qcom,param-override-seq = <0xa1 0x6c
-				0x43 0x70>;
 };
 
 &usb_qmp_dp_phy {
@@ -407,7 +410,7 @@
                 touch_hold_support = <1>;
                 charge_detect_support = <1>;
                 register-is-16bit = <1>;
-                module_id_support = <1>;
+               // module_id_support = <1>;
                 //kernel_grip_support;
                 //health_monitor_support;
                 //fingerprint_underscreen_support;

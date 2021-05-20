@@ -351,8 +351,8 @@
 
 		pinctrl-names = "mux_fastchg_active",
 		"mux_fastchg_suspend",
-		"mcu_data_active",
-		"mcu_data_suspend";
+		"mcu_data_read",
+		"mcu_data_write";
 		pinctrl-0 = <&fastchg_active
 		&usb_sw_active
 		&ap_clk_active>;
@@ -364,7 +364,7 @@
 		op,fw-erase-count = <384>;
 		op,fw-addr-low = <0x88>;
 		op,fw-addr-high = <0>;
-		op,4300mAh_4p45_support;
+		op,4115mAh_4p45_support;
 		op,mcl_verion;
 	};
 };
@@ -423,6 +423,7 @@
 	qcom,otg-cl-ua = <1500000>;
 	op,sw-iterm-ma = <310>;
 	op,sw-check-full-enable;
+	qcom,op-pps-usbpd-detection = <&pm7250b_pdphy>;
 	/*ffc temp region*/
 	ffc-pre-normal-decidegc = <120>;
 	ffc-normal-decidegc = <350>;
@@ -572,6 +573,7 @@
 
 &soc {
 	fingerprint_detect:fingerprint_detect {
+		oneplus,20801;
 		compatible = "oneplus,fpdetect";
 		fp-gpio-id0 = <&tlmm 65 0>;
 		pinctrl-names = "fp_id_init";
@@ -595,14 +597,14 @@
 		status = "okay";
 	};
 
- 	oem_aboard_check:oem_aboard_check {
- 		compatible = "oem,aboard";
- 		interrupt-parent = <&tlmm>;
- 		oem,aboard-gpio-0 = <&tlmm 58 0>;
- 		pinctrl-names = "oem_aboard_active","oem_aboard_sleep";
- 		pinctrl-0 = <&ab_id0_active>;
+	oem_aboard_check:oem_aboard_check {
+		compatible = "oem,aboard";
+		interrupt-parent = <&tlmm>;
+		oem,aboard-gpio-0 = <&tlmm 58 0>;
+		pinctrl-names = "oem_aboard_active","oem_aboard_sleep";
+		pinctrl-0 = <&ab_id0_active>;
 		pinctrl-1 = <&ab_id0_sleep>;
- 	};
+	};
 
 	bootloader_log {
 		compatible = "bootloader_log";
