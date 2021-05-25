@@ -10,4 +10,6 @@ struct fingerprint_detect_data {
 	int sensor_version;
 };
 extern int fp_version;
+extern int fp_dtsi_product;
 #endif
+

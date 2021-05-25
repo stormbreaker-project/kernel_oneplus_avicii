@@ -12,6 +12,7 @@
 #include <linux/err.h>
 
 #include "gf_spi.h"
+#include "../fingerprint_detect/fingerprint_detect.h"
 
 #if defined(USE_SPI_BUS)
 #include <linux/spi/spi.h>
@@ -19,7 +20,6 @@
 #elif defined(USE_PLATFORM_BUS)
 #include <linux/platform_device.h>
 #endif
-#include <linux/pinctrl/consumer.h>
 //#include <linux/oneplus/boot_mode.h>
 
 int gf_pinctrl_init(struct gf_dev* gf_dev)
@@ -54,7 +54,7 @@ int gf_pinctrl_init(struct gf_dev* gf_dev)
 err:
 	gf_dev->gf_pinctrl = NULL;
 	gf_dev->gpio_state_enable = NULL;
-	gf_dev->gpio_state_disable = NULL;
+	//gf_dev->gpio_state_disable = NULL;
 	return ret;
 }
 int gf_parse_dts(struct gf_dev* gf_dev)
@@ -117,34 +117,33 @@ void gf_cleanup(struct gf_dev *gf_dev)
 int gf_power_on(struct gf_dev* gf_dev)
 {
 	int rc = 0;
-#if 0
-    struct device *dev = &gf_dev->spi->dev;
-    struct regulator *vreg = gf_dev->opreg;
-    if (!vreg) {
-            vreg = regulator_get(dev, "ldo");
-            if (IS_ERR(vreg)) {
-                pr_err("Unable to get ldo power.\n");
-                return PTR_ERR(vreg);
-            }
-        }
-        if (regulator_count_voltages(vreg) > 0) {
-            //rc = regulator_set_voltage(vreg, 3300000, 3300000);
-            rc = regulator_set_voltage(vreg, 2950000, 2950000);
-            if (rc) {
-                pr_err("Unable to set voltage on ldo, %d\n", rc);
-            }
-        }
-        rc = regulator_set_load(vreg, 150000);
-        if (rc < 0) {
-            pr_err("Unable to set current on ldo, %d\n", rc);
-        }
-        rc = regulator_enable(vreg);
-        if (rc) {
-            pr_err("error enabling ldo: %d\n", rc);
-            regulator_put(vreg);
-            gf_dev->opreg  = NULL;
-        }
- #endif
+	if (fp_dtsi_product != 20801) {
+		struct device *dev = &gf_dev->spi->dev;
+		struct regulator *vreg = gf_dev->vdd_3v3;
+		if (!vreg) {
+			vreg = regulator_get(dev, "fppower");
+			if (IS_ERR(vreg)) {
+				pr_err("Unable to get fppower power.\n");
+				return PTR_ERR(vreg);
+			}
+		}
+		if (regulator_count_voltages(vreg) > 0) {
+			rc = regulator_set_voltage(vreg, 3024000, 3024000);
+			if (rc) {
+				pr_err("Unable to set voltage on fppower, %d\n", rc);
+			}
+		}
+		rc = regulator_set_load(vreg, 150000);
+		if (rc < 0) {
+			pr_err("Unable to set current on fppower, %d\n", rc);
+		}
+		rc = regulator_enable(vreg);
+		if (rc) {
+			pr_err("error enabling fppower: %d\n", rc);
+			regulator_put(vreg);
+			gf_dev->vdd_3v3  = NULL;
+		}
+	}
 	pr_info("---- power on ok ----\n");
 
 	return rc;
@@ -152,20 +151,19 @@ int gf_power_on(struct gf_dev* gf_dev)
 
 int gf_power_off(struct gf_dev* gf_dev)
 {
-    int rc = 0;
-#if 0
-    struct regulator *vreg = gf_dev->opreg;
-    if (vreg) {
-        if (regulator_is_enabled(vreg)) {
-            regulator_disable(vreg);
-            pr_err("disabled ldo\n");
-        }
-        regulator_put(vreg);
-        gf_dev->opreg = NULL;
-    }
-#endif
-
-    pr_info("---- power off ----\n");
+	int rc = 0;
+	if (fp_dtsi_product != 20801) {
+		struct regulator *vreg = gf_dev->vdd_3v3;
+		if (vreg) {
+			if (regulator_is_enabled(vreg)) {
+				regulator_disable(vreg);
+				pr_err("disabled fppower\n");
+			}
+			regulator_put(vreg);
+			gf_dev->vdd_3v3 = NULL;
+		}
+	}
+	pr_info("---- power off ----\n");
 
 	return rc;
 }

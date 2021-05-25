@@ -77,22 +77,30 @@ int gt1x_init_tool_node(struct touchpanel_data *ts, struct fw_update_info *updat
 	gt_tool_info->cmd_head.data = kzalloc(DATA_LENGTH_UINT, GFP_KERNEL);
 	gt_tool_info->update_info = update_info;
 
-	if (NULL == gt_tool_info->cmd_head.data) {
-		TPD_INFO("Apply for memory failed.");
-		kfree(gt_tool_info);
-		return -1;
-	}
-	TPD_INFO("Alloc memory size:%d.", DATA_LENGTH_UINT);
+    if (NULL == gt_tool_info->cmd_head.data) {
+        TPD_INFO("Apply for memory failed.");
+        goto OUT2;
+    }
+    TPD_INFO("Alloc memory size:%d.", DATA_LENGTH_UINT);
 
-	gt1x_tool_proc_entry = proc_create_data("goodix_tool", 0666, NULL, &gt1x_tool_fops, gt_tool_info);
-	if (gt1x_tool_proc_entry == NULL) {
-		TPD_INFO("CAN't create proc entry /proc/goodix_tool.");
-		return -1;
-	} else {
-		TPD_INFO("Created proc entry /proc/goodix_tool.");
-	}
+    gt1x_tool_proc_entry = proc_create_data("goodix_tool", 0666, NULL, &gt1x_tool_fops, gt_tool_info);
+    if (gt1x_tool_proc_entry == NULL) {
+        TPD_INFO("CAN't create proc entry /proc/goodix_tool.");
+        goto OUT1;
+    } else {
+        TPD_INFO("Created proc entry /proc/goodix_tool.");
+    }
+    return 0;
 
-	return 0;
+OUT1:
+    if (gt_tool_info->cmd_head.data) {
+        kfree(gt_tool_info->cmd_head.data);
+    }
+OUT2:
+    if (gt_tool_info) {
+        kfree(gt_tool_info);
+    }
+    return -1;
 }
 
 #if 0
@@ -315,12 +323,8 @@ static ssize_t gt1x_tool_write(struct file *filp, const char __user * buff, size
 			esd_handle_switch(gt_tool_info->esd_info, true);   //enable esd check
 		return CMD_HEAD_LENGTH;
 	} else if (17 == cmd_head->wr) {
-		u16 data_len;
-		data_len = cmd_head->data_len;
-		if (data_len > 0) {
-		len = data_len > DATA_LENGTH ? DATA_LENGTH : data_len;
-		ret = copy_from_user(&cmd_head->data[GTP_ADDR_LENGTH], &buff[CMD_HEAD_LENGTH],len);
-		}
+        cmd_head->data_len = cmd_head->data_len > DATA_LENGTH ? DATA_LENGTH : cmd_head->data_len;
+        ret = copy_from_user(&cmd_head->data[GTP_ADDR_LENGTH], &buff[CMD_HEAD_LENGTH], cmd_head->data_len);
 		if (ret) {
 			TPD_INFO("copy_from_user failed.");
 			return -1;

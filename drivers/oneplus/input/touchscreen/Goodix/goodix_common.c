@@ -26,6 +26,140 @@
  * we can using this function to get item offset form index item
  * Returning parameter number(success) or negative errno(failed)
  */
+
+
+
+/* i2c read/write ops for support u32 addr */
+int touch_i2c_read_block_u32(struct i2c_client *client, u32 reg,
+			unsigned int len, unsigned char *data)
+{
+	unsigned int transfer_length = 0;
+	unsigned int pos = 0, address = reg;
+	unsigned char get_buf[128], addr_buf[GOODIX_REG_ADDR_SIZE];
+	int retry, r = 0;
+	struct i2c_msg msgs[] = {
+		{
+			.addr = client->addr,
+			.flags = !I2C_M_RD,
+			.buf = &addr_buf[0],
+			.len = GOODIX_REG_ADDR_SIZE,
+		}, {
+			.addr = client->addr,
+			.flags = I2C_M_RD,
+		}
+	};
+
+	if (likely(len < sizeof(get_buf))) {
+		/* code optimize, use stack memory */
+		msgs[1].buf = &get_buf[0];
+	} else {
+		msgs[1].buf = kzalloc(len, GFP_KERNEL);
+		if (msgs[1].buf == NULL)
+			return -ENOMEM;
+	}
+
+	while (pos != len) {
+		if (unlikely(len - pos > I2C_MAX_TRANSFER_SIZE))
+			transfer_length = I2C_MAX_TRANSFER_SIZE;
+		else
+			transfer_length = len - pos;
+
+		msgs[0].buf[0] = (address >> 24) & 0xFF;
+		msgs[0].buf[1] = (address >> 16) & 0xFF;
+		msgs[0].buf[2] = (address >> 8) & 0xFF;
+		msgs[0].buf[3] = address & 0xFF;
+		msgs[1].len = transfer_length;
+
+		for (retry = 0; retry < GOODIX_BUS_RETRY_TIMES; retry++) {
+			if (likely(i2c_transfer(client->adapter,
+						msgs, 2) == 2)) {
+				memcpy(&data[pos], msgs[1].buf,
+					   transfer_length);
+				pos += transfer_length;
+				address += transfer_length;
+				break;
+			}
+			TPD_INFO("%s: I2c read retry[%d]:0x%x\n", __func__, retry + 1, reg);
+			msleep(20);
+		}
+		if (unlikely(retry == GOODIX_BUS_RETRY_TIMES)) {
+			TPD_INFO("%s, I2c read failed,dev:%02x,reg:%04x,size:%u\n", __func__,
+				   client->addr, reg, len);
+			r = -EAGAIN;
+			goto read_exit;
+		}
+	}
+
+read_exit:
+	if (unlikely(len >= sizeof(get_buf)))
+		kfree(msgs[1].buf);
+	return r;
+}
+
+int touch_i2c_write_block_u32(struct i2c_client *client, u32 reg,
+		unsigned int len, unsigned char const *data)
+{
+	unsigned int pos = 0, transfer_length = 0;
+	unsigned int address = reg;
+	unsigned char put_buf[128];
+	int retry, r = 0;
+	struct i2c_msg msg = {
+			.addr = client->addr,
+			.flags = !I2C_M_RD,
+	};
+
+	if (likely(len + GOODIX_REG_ADDR_SIZE < sizeof(put_buf))) {
+		/* code optimize,use stack memory*/
+		msg.buf = &put_buf[0];
+	} else {
+		msg.buf = kmalloc(len + GOODIX_REG_ADDR_SIZE, GFP_KERNEL);
+		if (msg.buf == NULL)
+			return -ENOMEM;
+	}
+
+	while (pos != len) {
+		if (unlikely(len - pos > I2C_MAX_TRANSFER_SIZE -
+				 GOODIX_REG_ADDR_SIZE))
+			transfer_length = I2C_MAX_TRANSFER_SIZE -
+				 GOODIX_REG_ADDR_SIZE;
+		else
+			transfer_length = len - pos;
+		msg.buf[0] = (address >> 24) & 0xFF;
+		msg.buf[1] = (address >> 16) & 0xFF;
+		msg.buf[2] = (address >> 8) & 0xFF;
+		msg.buf[3] = address & 0xFF;
+
+		msg.len = transfer_length + GOODIX_REG_ADDR_SIZE;
+		memcpy(&msg.buf[GOODIX_REG_ADDR_SIZE],
+			&data[pos], transfer_length);
+
+		for (retry = 0; retry < GOODIX_BUS_RETRY_TIMES; retry++) {
+			if (likely(i2c_transfer(client->adapter,
+						&msg, 1) == 1)) {
+				pos += transfer_length;
+				address += transfer_length;
+				break;
+			}
+			TPD_DEBUG("I2c write retry[%d]\n", retry + 1);
+			msleep(20);
+		}
+		if (unlikely(retry == GOODIX_BUS_RETRY_TIMES)) {
+			TPD_INFO("%s: I2c write failed,dev:%02x,reg:%04x,size:%u\n", __func__,
+				client->addr, reg, len);
+			r = -EAGAIN;
+			goto write_exit;
+		}
+	}
+
+write_exit:
+	if (likely(len + GOODIX_REG_ADDR_SIZE >= sizeof(put_buf)))
+		kfree(msg.buf);
+	return r;
+}
+
+
+
+
 uint32_t search_for_item_offset(const struct firmware *fw, int item_cnt, uint8_t item_index)
 {
 	int i = 0;
@@ -38,6 +172,7 @@ uint32_t search_for_item_offset(const struct firmware *fw, int item_cnt, uint8_t
 		item_header = (struct auto_test_item_header *)(fw->data + p_item_offset[i]);
 		if (item_header->item_bit == item_index) {
 			item_offset = p_item_offset[i];
+		 	TPD_INFO("p_item_offset:0X%x,i_value is:%d\n",p_item_offset[i],i);
 		}
 	}
 	return item_offset;
@@ -186,11 +321,167 @@ ERROR:
 
 void tp_kfree(void **mem)
 {
-	if(*mem != NULL) {
-		kfree(*mem);
-		*mem = NULL;
-	}
+    if(*mem != NULL) {
+        kfree(*mem);
+        *mem = NULL;
+    }
 }
+
+
+/*
+ * @para buf
+ * @ return
+ * function
+*/
+char *goto_next_line (char *buf)
+{
+	//int j = 0;
+
+// 	TPD_INFO("%s --enter",__func__);
+	if (!buf) {
+		TPD_INFO("%s:the buf is null",__func__);
+		return 0;
+	}
+
+	do {
+		buf =buf +1;
+		//TPD_INFO ("J value is :%d\n", j++);
+		}
+	while ((*buf !=  '\n') &&  (*buf != '\0'));
+	if(*buf == '\0')
+	return buf;
+	buf = buf +1 ;
+	return buf;
+   }
+
+/*
+*
+*
+*/
+static void copy_one_line (char *copy_from,char *copy_to)
+{
+// 	TPD_INFO("%s --enter",__func__);
+
+	do {
+		*copy_to = *copy_from;
+		copy_to ++;
+		copy_from++;
+	}
+	while ( (*copy_from  != '\n') && ( *copy_from != '\t') && ( *copy_from != '\0'));
+	*copy_to = '\n';
+  }
+
+/*
+  * parse_valid_data(char *buf_start, loff_t buf_size,char *ptr, int32_t* data, int rows)
+  *
+  *
+  */
+
+static int parse_valid_data(char *buf ,int32_t *data,int rows)
+{
+	int i = 0,j = 0;
+	char *temp_data,*token;
+	char rows_data[512] ;
+
+ //	TPD_INFO("%s --enter",__func__);
+	if (!buf) {
+		TPD_INFO("%s,the buf is null...\n",__func__);
+	     return -1;
+	}
+    if (!data) {
+		TPD_INFO ("%s,the data is null...",__func__);	
+		 return -1;
+	}	
+
+	for (i = 0;i < rows;i++ ) {
+		memset(rows_data,0,sizeof(rows_data));
+		copy_one_line(buf,rows_data);
+		temp_data = rows_data;
+
+	//	TPD_INFO("token size_111 is %d,%*ph",strlen(buf),6,buf);
+	//	TPD_INFO("token size_222 is %d,%*ph",strlen(rows_data ),6,rows_data);
+	//	TPD_INFO("token size_333 is %d,%*ph",strlen(temp_data),6,temp_data);
+
+		while ((token = strsep(&temp_data,",\n\r\t\0"))) {
+			if(strlen(token) == 0)
+				continue;
+ 	//		TPD_INFO("token size is %d,%*ph",strlen(token),6,token);
+			data [j] = (int32_t)simple_strtol (token,NULL,10);
+	     	//j++;
+	//		TPD_INFO ("token data 444 :%2x,%d\n",data[j],j);
+			j++;
+		}
+		buf = goto_next_line (buf);
+		if ( !buf || (0 == strlen(buf)) )
+				break;
+	}
+	return 0;
+}
+
+ static void  print_csv_data(int32_t *data, int rows,int columns) 
+  {
+	int i = 0 ,j = 0;
+ 	
+ 	TPD_INFO("%s --enter,rows value is :%d,columns value is :%d, data size is:%d\n ",__func__, rows,columns,sizeof(data) );
+   if(!data) {
+
+		TPD_INFO("print_csv_data is null");
+ 		//return 0;
+		return;
+  	}
+
+	for ( i = 0; i < rows; i++ ) {
+		for( j = 0; j < columns;j++ ) {
+//			TPD_INFO("%d\n", data[i*columns + j]);
+		}
+	}
+  }
+
+
+
+/*
+ * get_test_value_from_limit - get all infomation from item
+ * @fw: pointer to fw
+ * @item_index: item index
+ * we can using this function to get infomation form index item
+ * Returning pointer to test_item_info buffer
+ */
+
+int  gt988x_parse_csvfile(const struct firmware *fw, char *target_name, int32_t  *data, int rows, int columns)
+ {
+	char *ptr = NULL ,*buf = NULL;
+   //	int ret;
+
+ 	if (target_name == NULL) {
+	  TPD_INFO("%s :target_name is null\n",__func__);
+	 	goto exit_free;
+ 	}
+    ptr = (char*)kzalloc (sizeof(fw->size),GFP_KERNEL);
+	ptr = (char*)(fw->data);
+	buf = strstr(ptr, target_name);
+	TPD_INFO("%s --enter,%*ph",__func__,60,buf);
+	if(buf == NULL) {
+		goto exit_free;
+	}
+	buf =  goto_next_line(buf);
+	/*
+	 if (ret < 0) {
+	 	TPD_INFO ("%s : get next line is null\n",__func__);
+	 }
+	*/
+
+	TPD_INFO("%s --enter-1,%*ph",__func__,60,buf);
+   	if (data) {
+		parse_valid_data (buf,data,rows);
+  		print_csv_data(data,rows,columns);
+   	}
+exit_free:
+	if(!ptr) {
+		kfree(ptr);
+		return -1;
+ 	}
+  	return 0;
+ }
 
 void GetCirclePoints(struct Coordinate *input_points, int number, struct Coordinate *pPnts)
 {
@@ -471,6 +762,7 @@ void goodix_limit_read(struct seq_file *s, struct touchpanel_data *ts)
 	ph = (struct auto_test_header *)(fw->data);
 	p_item_offset = (uint32_t *)(fw->data + 16);
 	if ((ph->magic1 != 0x494D494C) || (ph->magic2 != 0x474D4954)) {
+		TPD_INFO("ph->magic1 is: 0x%04x, ph->magic2 is :0x%04x\n",ph->magic1,ph->magic2);
 		TPD_INFO("limit image is not generated\n");
 		seq_printf(s, "limit image is not generated\n");
 		release_firmware(fw);
@@ -614,9 +906,11 @@ static int tp_auto_test_read_func(struct seq_file *s, void *v)
 	test_head = (struct auto_test_header *)fw->data;
 	p_data32 = (uint32_t *)(fw->data + 16);
 	if ((test_head->magic1 != 0x494D494C) || (test_head->magic2 != 0x474D4954)) {
+		TPD_INFO("fuck_ph->magic1 is: 0x%04x\n, ph->magic2 is :0x%04x\n",test_head->magic1,test_head->magic2);
+        TPD_INFO("current test item: %llx\n", test_head->test_item);
 		TPD_INFO("limit image is not generated\n");
 		seq_printf(s, "limit image is not generated\n");
-		goto OUT;
+      //  goto OUT;
 	}
 	TPD_INFO("current test item: %llx\n", test_head->test_item);
 
@@ -631,7 +925,7 @@ static int tp_auto_test_read_func(struct seq_file *s, void *v)
 
 	goodix_ops->auto_test(s, ts->chip_data, &goodix_testdata);
 
-OUT:
+//OUT:
 
 	release_firmware(fw);
 
@@ -705,3 +999,4 @@ int Goodix_create_proc(struct touchpanel_data *ts, struct goodix_proc_operations
 
 	return ret;
 }
+EXPORT_SYMBOL(gt988x_parse_csvfile);

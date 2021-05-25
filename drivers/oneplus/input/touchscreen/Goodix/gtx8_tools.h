@@ -30,16 +30,16 @@
 
 
 struct Goodix_tool_info {
-	u8     devicecount;
-	bool   esd_handle_support;            /*esd handle support feature*/
-	int    *is_suspended;
-	void   *chip_data;
-	struct hw_resource *hw_res;
-	struct i2c_client  *client;
-	struct fw_update_info *update_info;
-	struct esd_information  *esd_info;
+    u8     devicecount;
+    bool   esd_handle_support;            /*esd handle support feature*/
+    int    *is_suspended;
+    void   *chip_data;
+    struct hw_resource *hw_res;
+    struct i2c_client  *client;
+    struct fw_update_info *update_info;
+    struct esd_information  *esd_info;
 
-	int  (*reset) (void *chip_data); /*Reset Touchpanel*/
+    int  (*reset) (void *chip_data); /*Reset Touchpanel*/
 };
 
 int gtx8_init_tool_node(struct touchpanel_data *ts);

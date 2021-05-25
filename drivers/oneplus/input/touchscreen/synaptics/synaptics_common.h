@@ -227,8 +227,8 @@ struct syna_testdata{
 
 //import from "android/bootable/bootloader/lk/platform/msm_shared/include/msm_panel.h"
 enum {
-	OPPO16037JDI_R63452_1080P_CMD_PANEL = 13,
-	OPPO16037SAMSUNG_S6E3FA5_1080P_CMD_PANEL = 14,
+	OP16037JDI_R63452_1080P_CMD_PANEL = 13,
+	OP16037SAMSUNG_S6E3FA5_1080P_CMD_PANEL = 14,
 	UNKNOWN_PANEL
 };
 
