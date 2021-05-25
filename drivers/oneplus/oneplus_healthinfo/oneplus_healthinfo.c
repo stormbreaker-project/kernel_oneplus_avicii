@@ -19,24 +19,6 @@
 #include <linux/oem/memory_monitor.h>
 #endif
 
-struct sched_stat_para {
-	bool ctrl;
-	bool logon;
-	bool trig;
-	int low_thresh_ms;
-	int high_thresh_ms;
-	u64 low_cnt;
-	u64 high_cnt;
-	u64 total_ms;
-	u64 total_cnt;
-	u64 fg_low_cnt;
-	u64 fg_high_cnt;
-	u64 fg_total_ms;
-	u64 fg_total_cnt;
-	u64 fg_max_delta_ms;
-	u64 delta_ms;
-};
-
 struct sched_stat_para oneplus_sched_para[OHM_SCHED_TOTAL];
 static char *sched_list[OHM_TYPE_TOTAL] = {
 	/* SCHED_STATS 0 -11 */
