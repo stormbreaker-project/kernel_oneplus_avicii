@@ -17,7 +17,6 @@ struct ccdm_info {
 	long long tb_freq_boost[CCDM_CLUS_SIZE];
 	long long tb_place_boost_hint;
 	long long tb_idle_block_hint[CCDM_CPU_SIZE];
-	long long tb_cctl_boost_hint;
 };
 
 /* expected to public */
@@ -46,7 +45,6 @@ enum {
 	CCDM_TB_CPU_6_IDLE_BLOCK,
 	CCDM_TB_CPU_7_IDLE_BLOCK,
 	CCDM_TB_IDLE_BLOCK,
-	CCDM_TB_CCTL_BOOST,
 };
 
 static struct ccdm_info ginfo = {
@@ -65,7 +63,6 @@ static struct ccdm_info ginfo = {
 		CCDM_ULLONG_MAX, CCDM_ULLONG_MAX,
 		CCDM_ULLONG_MAX, CCDM_ULLONG_MAX
 	}, // idle block
-	0,
 
 
 };
@@ -120,9 +117,6 @@ void ccdm_update_hint_1(int type, long long arg1)
 		break;
 	case CCDM_TB_CPU_7_IDLE_BLOCK:
 		ginfo.tb_idle_block_hint[7] = arg1;
-		break;
-	case CCDM_TB_CCTL_BOOST:
-		ginfo.tb_cctl_boost_hint = arg1;
 		break;
 	}
 }
@@ -206,8 +200,6 @@ long long ccdm_get_hint(int type)
 		return ginfo.tb_idle_block_hint[6];
 	case CCDM_TB_CPU_7_IDLE_BLOCK:
 		return ginfo.tb_idle_block_hint[7];
-	case CCDM_TB_CCTL_BOOST:
-		return ginfo.tb_cctl_boost_hint;
 	}
 	return 0;
 }
@@ -380,7 +372,6 @@ void ccdm_get_status(void *ptr)
 	ccdm->ddrfreq = ginfo.ddrfreq;
 	ccdm->c_fps_boost_ddrfreq = ginfo.c_fps_boost_ddrfreq;
 	ccdm->tb_place_boost_hint = ginfo.tb_place_boost_hint;
-	ccdm->tb_cctl_boost_hint = ginfo.tb_cctl_boost_hint;
 
 	for (i = 0; i < CCDM_CPU_SIZE; ++i)
 		ccdm->tb_idle_block_hint[i] = ginfo.tb_idle_block_hint[i];
@@ -403,7 +394,6 @@ void ccdm_reset(void)
 	ginfo.ddrfreq = 0;
 	ginfo.c_fps_boost_ddrfreq = 0;
 	ginfo.tb_place_boost_hint = 0;
-	ginfo.tb_cctl_boost_hint = 0;
 
 	for (i = 0; i < CCDM_CPU_SIZE; ++i)
 		ginfo.tb_idle_block_hint[i] = CCDM_ULLONG_MAX;

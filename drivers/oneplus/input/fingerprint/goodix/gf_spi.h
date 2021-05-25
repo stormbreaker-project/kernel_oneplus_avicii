@@ -28,6 +28,7 @@ struct fp_underscreen_info {
     uint16_t x;
     uint16_t y;
 };
+
 #define SUPPORT_NAV_EVENT
 
 #if defined(SUPPORT_NAV_EVENT)
@@ -148,11 +149,12 @@ struct gf_dev {
 	signed irq_gpio;
 	signed reset_gpio;
 	signed pwr_gpio;
+    struct regulator *opreg;
 	int irq;
 	int irq_enabled;
 	int clk_enabled;
 
-	struct regulator *vdd_3v3;
+	struct regulator *vdd_3v2;
 	int regulator_vdd_vmin;
 	int regulator_vdd_vmax;
 	int regulator_vdd_current;
@@ -187,5 +189,6 @@ void sendnlmsg_tp(struct fp_underscreen_info *msg, int length);
 int netlink_init(void);
 void netlink_exit(void);
 extern int gf_opticalfp_irq_handler(int event);
-extern int opticalfp_irq_handler(struct fp_underscreen_info* tp_info);
+extern int opticalfp_irq_handler(struct fp_underscreen_info* tp_info) ; // main handler
+
 #endif /*__GF_SPI_H*/

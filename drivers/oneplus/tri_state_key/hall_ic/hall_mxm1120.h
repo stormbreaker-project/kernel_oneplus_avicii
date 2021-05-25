@@ -299,7 +299,7 @@ typedef struct {
     struct regulator    *vdd;
     struct regulator    *vio;
     int    power_enabled;
-	struct wakeup_source *source;
+	struct wakeup_source source;
 
 } m1120_data_t;
 /* ********************************************************* */

@@ -27,6 +27,8 @@
 #include <linux/timer.h>
 #include <linux/delay.h>
 #include "../../extcon/extcon.h"
+//#include <linux/oem/boot_mode.h>
+
 //#include <linux/project_info.h>
 
 #define DRV_NAME	"tri_state_key"
@@ -72,7 +74,7 @@ struct extcon_dev_data {
 	struct pinctrl_state *set_state;
 
 };
-
+//void goodix_delta_print(bool enable);
 static struct extcon_dev_data *extcon_data;
 static DEFINE_MUTEX(sem);
 static int set_gpio_by_pinctrl(void)
@@ -80,18 +82,15 @@ static int set_gpio_by_pinctrl(void)
 	return pinctrl_select_state(extcon_data->key_pinctrl,
 		extcon_data->set_state);
 }
-/*op add to fix GCE-7551 begin*/
-//extern int aw8697_op_haptic_stop(void);
-/*op add to fix GCE-7551 end*/
 
 static void extcon_dev_work(struct work_struct *work)
 {
 	int key[3] = {0, 0, 0};
+	//int boot_mode = -1;
 	/*op add to fix ISTRACKING-34823 begin*/
 	static int pre_key0, pre_key1, pre_key2;
 	/*op add to fix ISTRACKING-34823 end*/
-	/*hw 13 use special tri state key no use key2*/
-	//hw_version=get_hw_version();
+
 	key[0] = gpio_get_value(extcon_data->key1_gpio);
 	key[1] = gpio_get_value(extcon_data->key2_gpio);
 	key[2] = gpio_get_value(extcon_data->key3_gpio);
@@ -146,10 +145,10 @@ static void extcon_dev_work(struct work_struct *work)
 			extcon_data->edev, 2, key[1]);
 	extcon_set_state_sync(
 			extcon_data->edev, 3, key[2]);
-	/*op add to fix GCE-7551 begin*/
-	//if (!key[2] ||  !key[1])
-	//	aw8697_op_haptic_stop();
-	/*op add to fix GCE-7551 end*/
+	//boot_mode = get_boot_mode();
+	//KEY_LOG("boot mode is %d\n", boot_mode);
+	//if (boot_mode == MSM_BOOT_MODE_NORMAL)
+	//	goodix_delta_print(true);
 	/*op add to fix ISTRACKING-34823 begin*/
 	if (!key[0] || !key[1] || !key[2]) {
 		pre_key0 = key[0];
@@ -166,7 +165,7 @@ static irqreturn_t extcon_dev_interrupt(int irq, void *_dev)
 	return IRQ_HANDLED;
 }
 
-static void timer_handle(struct timer_list *t)
+void timer_handle(struct timer_list *t)
 {
 	schedule_work(&extcon_data->work);
 }
@@ -214,7 +213,6 @@ static int tristate_dev_probe(struct platform_device *pdev)
 	struct device *dev;
 	int ret = 0;
 	KEY_LOG("SYSY\n");
-	KEY_LOG("TRI_STATE_KEY :******************PROBE CALL****\n");
 	dev = &pdev->dev;
 
 	extcon_data = kzalloc(sizeof(struct extcon_dev_data), GFP_KERNEL);
@@ -320,9 +318,7 @@ static int tristate_dev_probe(struct platform_device *pdev)
 
 	INIT_WORK(&extcon_data->work, extcon_dev_work);
 
-	//init_timer(&extcon_data->s_timer);
 	__init_timer(&extcon_data->s_timer, timer_handle, 0);
-	//extcon_data->s_timer.function = &timer_handle;
 	extcon_data->s_timer.expires = jiffies + 5*HZ;
 
 	add_timer(&extcon_data->s_timer);

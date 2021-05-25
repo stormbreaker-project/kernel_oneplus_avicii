@@ -57,6 +57,8 @@
 
 #include "../fingerprint_detect/fingerprint_detect.h"
 
+#include <linux/delay.h>
+
 #define VER_MAJOR   1
 #define VER_MINOR   2
 #define PATCH_LEVEL 8
@@ -77,7 +79,7 @@ static int SPIDEV_MAJOR;
 static DECLARE_BITMAP(minors, N_SPI_MINORS);
 static LIST_HEAD(device_list);
 static DEFINE_MUTEX(device_list_lock);
-static struct wakeup_source *fp_wakelock;
+static struct wakeup_source fp_wakelock;
 static struct gf_dev gf;
 extern struct drm_panel *lcd_active_panel;
 struct gf_key_map maps[] = {
@@ -325,7 +327,7 @@ static irqreturn_t gf_irq(int irq, void *handle)
 #if defined(GF_NETLINK_ENABLE)
 	char msg = GF_NET_EVENT_IRQ;
 	//wake_lock_timeout(&fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
-	__pm_wakeup_event(fp_wakelock, WAKELOCK_HOLD_TIME);
+	__pm_wakeup_event(&fp_wakelock, WAKELOCK_HOLD_TIME);
 	sendnlmsg(&msg);
 #elif defined (GF_FASYNC)
 	struct gf_dev *gf_dev = &gf;
@@ -671,13 +673,11 @@ int opticalfp_irq_handler(struct fp_underscreen_info* tp_info)
 		return 0;
 	}
 	fp_tpinfo = *tp_info;
-
+	pr_err("fp_tpinfo.x = %d, fp_tpinfo.y = %d, fp_tpinfo.touch_state = %d\n", fp_tpinfo.x, fp_tpinfo.y,fp_tpinfo.touch_state);
 	if (fp_tpinfo.touch_state == 1) {
-		pr_err("TOUCH DOWN, fp_tpinfo.x = %d, fp_tpinfo.y = %d \n", fp_tpinfo.x, fp_tpinfo.y);
 		fp_tpinfo.touch_state = GF_NET_EVENT_TP_TOUCHDOWN;
 		sendnlmsg_tp(&fp_tpinfo,sizeof(fp_tpinfo));
 	} else if (fp_tpinfo.touch_state == 0) {
-		pr_err("TOUCH UP, fp_tpinfo.x = %d, fp_tpinfo.y = %d \n", fp_tpinfo.x, fp_tpinfo.y);
 		fp_tpinfo.touch_state = GF_NET_EVENT_TP_TOUCHUP;
 		sendnlmsg_tp(&fp_tpinfo,sizeof(fp_tpinfo));
 	}
@@ -702,7 +702,7 @@ int gf_opticalfp_irq_handler(int event)
 		sendnlmsg(&msg);
 	}
 
-	__pm_wakeup_event(fp_wakelock, 10*HZ);
+	__pm_wakeup_event(&fp_wakelock, 10*HZ);
 
 	return 0;
 }
@@ -719,7 +719,7 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 
 	if (val != FB_EARLY_EVENT_BLANK)
 		return 0;
-	pr_debug("[info] %s go to the goodix_fb_state_chg_callback value = %d\n",
+	pr_info("[info] %s go to the goodix_fb_state_chg_callback value = %d\n",
 			__func__, (int)val);
 	gf_dev = container_of(nb, struct gf_dev, notifier);
 
@@ -772,7 +772,7 @@ static int goodix_fb_state_chg_callback(
 	struct drm_panel_notifier *evdata = data;
 	unsigned int blank;
 	char msg = 0;
-	pr_debug("[info] %s go to the msm_drm_notifier_callback value = %d\n",
+	pr_info("[info] %s go to the msm_drm_notifier_callback value = %d\n",
 			__func__, (int)val);
 	if (val != DRM_PANEL_EARLY_EVENT_BLANK &&
 		val != DRM_PANEL_ONSCREENFINGERPRINT_EVENT)
@@ -811,7 +811,6 @@ static int goodix_fb_state_chg_callback(
 				gf_dev->fb_black = 1;
 #if defined(GF_NETLINK_ENABLE)
 				msg = GF_NET_EVENT_FB_BLACK;
-				pr_info("[%s] SCREEN OFF\n", __func__);
 				sendnlmsg(&msg);
 #elif defined(GF_FASYNC)
 				if (gf_dev->async) {
@@ -829,7 +828,6 @@ static int goodix_fb_state_chg_callback(
 				gf_dev->fb_black = 0;
 #if defined(GF_NETLINK_ENABLE)
 				msg = GF_NET_EVENT_FB_UNBLACK;
-				pr_info("[%s] SCREEN ON\n", __func__);
 				sendnlmsg(&msg);
 #elif defined(GF_FASYNC)
 				if (gf_dev->async)
@@ -842,7 +840,7 @@ static int goodix_fb_state_chg_callback(
 				NULL, dev_attr_screen_state.attr.name);
 			break;
 		default:
-			pr_info("%s defalut\n", __func__);
+			pr_debug("%s defalut\n", __func__);
 			break;
 		}
 	}
@@ -861,6 +859,7 @@ static int gf_probe(struct platform_device *pdev)
 	int status = -EINVAL;
 	unsigned long minor;
 	int i;
+    pr_err("%s:enter \n", __func__);
 
 	/* Initialize the driver data */
 	INIT_LIST_HEAD(&gf_dev->device_entry);
@@ -872,7 +871,7 @@ static int gf_probe(struct platform_device *pdev)
 	gf_dev->irq_gpio = -EINVAL;
 	gf_dev->reset_gpio = -EINVAL;
 	gf_dev->pwr_gpio = -EINVAL;
-	gf_dev->vdd_3v3 = NULL;
+    gf_dev->opreg = NULL;
 	gf_dev->device_available = 0;
 	gf_dev->fb_black = 0;
 
@@ -902,6 +901,7 @@ static int gf_probe(struct platform_device *pdev)
 		gf_dev->devt = 0;
 	}
 	mutex_unlock(&device_list_lock);
+	//oppo diff starts
 	status = gf_parse_dts(gf_dev);
 	if (status)
 		goto err_parse_dt;
@@ -909,46 +909,30 @@ static int gf_probe(struct platform_device *pdev)
 	 * liuyan mv wakelock here
 	 * it should before irq
 	 */
-	fp_wakelock = wakeup_source_register(&gf_dev->spi->dev, "fp_wakelock");
+	wakeup_source_init(&fp_wakelock, "fp_wakelock");
 	status = irq_setup(gf_dev);
 	if (status)
 		goto err_irq;
 
-    if (fp_dtsi_product != 19805) {
-        status = gf_pinctrl_init(gf_dev);
-	    if (status)
-		    goto err_irq;
-    }
-	if (get_boot_mode() !=  MSM_BOOT_MODE_FACTORY) {
-        if (fp_dtsi_product != 19805) {
-        	status = pinctrl_select_state(gf_dev->gf_pinctrl,
-        		gf_dev->gpio_state_enable);
-        	if (status) {
-        		pr_err("can not set %s pins\n", "fp_en_init");
-        		goto error_hw;
-            }
-        } else {
-            status = gf_power_on(gf_dev);
-            if (status) {
-        		pr_err("can not set regulator power on.\n");
-        		goto error_hw;
-            }
-        }  
+	status = gf_pinctrl_init(gf_dev);
+	if (status)
+		goto err_irq;
+    
+    if (get_boot_mode() !=  MSM_BOOT_MODE_FACTORY) {
+		status = pinctrl_select_state(gf_dev->gf_pinctrl,
+			gf_dev->gpio_state_enable);
+		if (status) {
+			pr_err("can not set %s pins\n", "fp_en_init");
+			goto error_hw;
+		}
 	} else {
-	    if (fp_dtsi_product != 19805) {
-    		status = pinctrl_select_state(gf_dev->gf_pinctrl,
-    			gf_dev->gpio_state_disable);
-    		if (status) {
-    			pr_err("can not set %s pins\n", "fp_dis_init");
-    			goto error_hw;
-    		}
-        } else {
-            status = gf_power_off(gf_dev);
-            if (status) {
-        		pr_err("can not set regulator power off.\n");
-        		goto error_hw;
-            }
-        }
+		status = pinctrl_select_state(gf_dev->gf_pinctrl,
+			gf_dev->gpio_state_disable);
+		if (status) {
+			pr_err("can not set %s pins\n", "fp_dis_init");
+			goto error_hw;
+		}
+        
 	}
 	if (status == 0) {
 		/*input device subsystem */
@@ -995,8 +979,6 @@ static int gf_probe(struct platform_device *pdev)
 		}else{
 			pr_err("register notifier drm panel success!");
 		}
-	}else{
-		pr_err("Ooops!!! lcd_active_panel is null, unable to register fb_notifier!");
 	}
 #endif
 
@@ -1038,6 +1020,11 @@ err_irq:
 err_parse_dt:
 error_hw:
 	gf_dev->device_available = 0;
+	//oppo
+    if (MSM_BOOT_MODE_FACTORY == get_boot_mode())
+    {
+        gf_power_off(gf_dev);
+    }
 
 	return status;
 }
@@ -1050,7 +1037,7 @@ static int gf_remove(struct platform_device *pdev)
 {
 	struct gf_dev *gf_dev = &gf;
 
-	wakeup_source_unregister(fp_wakelock);
+	wakeup_source_trash(&fp_wakelock);
 
 #if defined(CONFIG_FB)
 	fb_unregister_client(&gf_dev->notifier);
@@ -1099,10 +1086,9 @@ static int __init gf_init(void)
 	 * that will key udev/mdev to add/remove /dev nodes.  Last, register
 	 * the driver which manages those device numbers.
 	 */
-	pr_info("%s:fp version %x\n", __func__, fp_version);
-	if ((fp_version != 0x03) && (fp_version != 0x04) && (fp_version != 0x07) \
-        && (fp_version != 0x9638) && (fp_version != 0x9678))
-		return 0;
+	pr_err("%s:fp version %x\n", __func__, fp_version);
+	/*if ((fp_version != 0x03) && (fp_version != 0x04) && (fp_version != 0x07))
+		return 0;*/
 	BUILD_BUG_ON(N_SPI_MINORS > 256);
 	status = register_chrdev(SPIDEV_MAJOR, CHRD_DRIVER_NAME, &gf_fops);
 	if (status < 0) {
@@ -1130,7 +1116,7 @@ static int __init gf_init(void)
 #ifdef GF_NETLINK_ENABLE
 	netlink_init();
 #endif
-	pr_info("status = 0x%x\n", status);
+	pr_err("status = 0x%x\n", status);
 	return 0;
 }
 late_initcall(gf_init);

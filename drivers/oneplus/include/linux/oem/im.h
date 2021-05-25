@@ -20,10 +20,6 @@ enum {
 	IM_ID_BINDER, // binder
 	IM_ID_HWUI, // hwui tasks
 	IM_ID_RENDER, // application render thread
-	IM_ID_UNITY_WORKER_THREAD,
-	IM_ID_UNITY_MAIN,
-	IM_ID_LAUNCHER, // launcher
-	IM_ID_HWUI_EX, // Hwui task (render enhancement feature)
 	IM_ID_BMT,
 	IM_ID_CRENDER,
 	IM_ID_MAX
@@ -42,10 +38,6 @@ enum {
 #define IM_BINDER         (1 << IM_ID_BINDER)
 #define IM_HWUI           (1 << IM_ID_HWUI)
 #define IM_RENDER         (1 << IM_ID_RENDER)
-#define IM_UNITY_WORKER_THREAD  (1 << IM_ID_UNITY_WORKER_THREAD)
-#define IM_UNITY_MAIN     (1 << IM_ID_UNITY_MAIN)
-#define IM_LAUNCHER       (1 << IM_ID_LAUNCHER)
-#define IM_HWUI_EX        (1 << IM_ID_HWUI_EX)
 #define IM_BMT            (1 << IM_ID_BMT)
 #define IM_CRENDER        (1 << IM_ID_CRENDER)
 
@@ -113,13 +105,12 @@ static inline bool im_rendering(struct task_struct *task)
 		IM_HWC |
 		IM_RENDER |
 		IM_BMT |
-                IM_CRENDER);
-
+		IM_CRENDER);
 }
 
 static inline bool im_graphic(struct task_struct *task)
 {
-	return task->im_flag & (IM_GL | IM_VK | IM_HWUI | IM_HWUI_EX);
+	return task->im_flag & (IM_GL | IM_VK | IM_HWUI);
 }
 
 static inline bool im_main(struct task_struct *task)
@@ -172,26 +163,6 @@ static inline bool im_hwui(struct task_struct *task)
 	return task->im_flag & IM_HWUI;
 }
 
-static inline bool im_unity_worker_thread(struct task_struct *task)
-{
-	return task->im_flag & (IM_UNITY_WORKER_THREAD);
-}
-
-static inline bool im_unity_main(struct task_struct *task)
-{
-	return task->im_flag & (IM_UNITY_MAIN);
-}
-
-static inline bool im_launcher(struct task_struct *task)
-{
-	return task->im_flag & IM_LAUNCHER;
-}
-
-static inline bool im_hwuiEx(struct task_struct *task)
-{
-	return task->im_flag & IM_HWUI_EX;
-}
-
 static inline bool im_crender(struct task_struct *task)
 {
 	return task->im_flag & IM_CRENDER;
@@ -214,8 +185,6 @@ extern void im_set_op_group(struct task_struct *task, int flag, bool insert);
 extern int im_render_grouping_enable(void);
 extern void im_list_add_task(struct task_struct *task);
 extern void im_list_del_task(struct task_struct *task);
-extern void im_to_str(int flag, char* desc, int size);
-extern void im_tsk_init_flag(void *ptr);
 #else
 static inline bool im_sf(struct task_struct *task) { return false; }
 static inline bool im_kw(struct task_struct *task) { return false; }
@@ -232,12 +201,9 @@ static inline bool im_hwbinder(struct task_struct *task) { return false; }
 static inline bool im_binder(struct task_struct *task) { return false; }
 static inline bool im_binder_related(struct task_struct *task) { return false; }
 static inline bool im_hwui(struct task_struct *task) { return false; }
-static inline bool im_unity_worker_thread(struct task_struct *task) { return false; }
-static inline bool im_unity_main(struct task_struct *task) { return false; }
-static inline bool im_launcher(struct task_struct *task) { return false; }
-static inline bool im_hwuiEx(struct task_struct *task) { return false; }
 static inline bool im_crender(struct task_struct *task) { return false; }
 static inline bool im_bmt(struct task_struct *task) { return false; }
+
 static inline void im_wmi(struct task_struct *task) {}
 static inline void im_wmi_current(void) {}
 static inline void im_set_flag(struct task_struct *task, int flag) {}
@@ -251,8 +217,6 @@ static inline void im_set_op_group(struct task_struct *task,
 static inline int im_render_grouping_enable(void) { return 0; }
 static inline void im_list_add_task(struct task_struct *task) {}
 static inline void im_list_del_task(struct task_struct *task) {}
-static inline void im_to_str(int flag, char* desc, int size) {}
-static inline void im_tsk_init_flag(void *ptr) {}
 #endif
 
 #endif

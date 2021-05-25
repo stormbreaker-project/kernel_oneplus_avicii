@@ -75,7 +75,6 @@ void sendnlmsg_tp(struct fp_underscreen_info *msg, int length)
 		pr_err("send msg from kernel to usespace failed ret 0x%x\n", ret);
 	}
 }
-
 void nl_data_ready(struct sk_buff *__skb)
 {
 	struct sk_buff *skb;
@@ -125,4 +124,3 @@ void netlink_exit(void)
 
 	pr_info("self module exited\n");
 }
-

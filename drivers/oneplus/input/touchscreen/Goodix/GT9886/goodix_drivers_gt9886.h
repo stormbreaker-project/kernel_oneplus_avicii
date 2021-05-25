@@ -156,9 +156,8 @@
 #define LANDSCAPE_SCREEN_90                             90
 #define LANDSCAPE_SCREEN_270                    270
 
-//commented to make compilation successful (1-9-2020)
-//#define FINGERPRINT_DOWN_DETECT                 1
-//#define FINGERPRINT_UP_DETECT                   0
+#define FINGERPRINT_DOWN_DETECT                 1
+#define FINGERPRINT_UP_DETECT                   0
 
 //debug info define
 #define SENSOR_NUM_ADDR                 0x5473

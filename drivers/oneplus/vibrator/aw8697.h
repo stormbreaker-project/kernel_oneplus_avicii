@@ -50,16 +50,10 @@
 #define LRA_0619
 
 #ifdef LRA_0619
-#ifdef CONFIG_ARCH_LITO
-#define AW8697_HAPTIC_F0_PRE                2350    /* 235Hz*/
+#define AW8697_HAPTIC_F0_PRE                2350   /* 235Hz*/
+#define AW8697_HAPTIC_F0_CALI_PERCEN        7       /* -7%~7%*/
 #define AW8697_HAPTIC_CONT_DRV_LVL          100   /* value*6.1/256*/
 #define AW8697_HAPTIC_CONT_DRV_LVL_OV       100   /* value*6.1/256*/
-#else
-#define AW8697_HAPTIC_F0_PRE                1700    /* 170Hz*/
-#define AW8697_HAPTIC_CONT_DRV_LVL          54   /* value*6.1/256*/
-#define AW8697_HAPTIC_CONT_DRV_LVL_OV       54   /* value*6.1/256*/
-#endif
-#define AW8697_HAPTIC_F0_CALI_PERCEN        7       /* -7%~7%*/
 #define AW8697_HAPTIC_CONT_TD               0x009a
 #define AW8697_HAPTIC_CONT_ZC_THR           0x0ff1
 #define AW8697_HAPTIC_CONT_NUM_BRK          3
@@ -432,7 +426,7 @@ struct aw8697 {
     struct delayed_work ram_work;
     struct timeval current_time;
     struct timeval pre_enter_time;
-    struct wakeup_source *vibrator_on;
+    struct wakeup_source vibrator_on;
 #ifdef TIMED_OUTPUT
     struct timed_output_dev to_dev;
 #else
@@ -446,7 +440,6 @@ struct aw8697 {
     bool ignore_sync;
     int pre_haptic_number;
     bool rtp_on;
-    int rtp_is_playing;
     struct timeval start,end;
     unsigned int timeval_flags;
     unsigned int osc_cali_flag;
@@ -515,12 +508,6 @@ struct aw8697 {
     unsigned int game_microsecond;
     unsigned int interval_us;
     struct notifier_block fb_notif;/*register to control tp report*/
-    unsigned int sin_num;
-    size_t sin_data_lenght;
-    unsigned int sin_add_flag;
-    unsigned int gun_type;
-    unsigned int bullet_nr;
-    unsigned int gun_mode;
 };
 
 struct aw8697_container{

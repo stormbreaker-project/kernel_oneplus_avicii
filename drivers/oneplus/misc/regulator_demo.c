@@ -44,7 +44,7 @@ static int regulator_demo_state_show(struct seq_file *seq, void *offset)
 
 static ssize_t regulator_demo_state_write(struct file *file, const char __user *buffer, size_t count, loff_t *pos)
 {
-	int regulator_demo_value = 0;
+	int regulator_demo_value;
 	char buf[10]={0};
 	int ret;
 

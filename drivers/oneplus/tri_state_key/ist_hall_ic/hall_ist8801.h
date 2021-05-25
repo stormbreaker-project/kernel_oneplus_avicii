@@ -297,7 +297,7 @@ typedef struct {
 	uint8_t origin_gain;
 	uint8_t origin_osr;
 	uint8_t origin_info;
-	struct wakeup_source *source;
+	struct wakeup_source source;
 } ist8801_data_t;
 /* ********************************************************* */
 

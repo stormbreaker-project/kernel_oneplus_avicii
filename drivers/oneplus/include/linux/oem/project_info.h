@@ -19,8 +19,6 @@ extern void *panic_info;
 
 struct project_info {
     char project_name[8];
-    char project_codename[20];
-    char reservename[12];
     uint32  prj_version;
     uint32  hw_version;
     uint32  rf_v1;

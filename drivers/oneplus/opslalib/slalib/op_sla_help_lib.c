@@ -980,7 +980,7 @@ void reset_sla_mobile_info(void)
 
 void calc_rtt_by_dev_index(int index, int tmp_rtt)
 {
-	if (!sla_screen_on)
+	if (!sla_screen_on || index < 0)
 		return;
 
 	op_sla_info[index].rtt_index++;

@@ -13,7 +13,7 @@
 #include <linux/notifier.h>
 #endif
 
-#include "../../touchpanel_common.h"
+//#include "../../touchpanel_common.h"
 #include "../synaptics_common.h"
 
 
@@ -51,9 +51,7 @@
 
 #define REPORT_TIMEOUT_MS       1000
 #define POWEWRUP_TO_RESET_TIME  10
-#define RESET_TO_NORMAL_TIME    80
-
-#define MAX_READ_LENGTH		64*1024
+#define RESET_TO_NORMAL_TIME    70
 
 #define INIT_BUFFER(buffer, is_clone) \
 	mutex_init(&buffer.buf_mutex); \
@@ -98,8 +96,6 @@ buffer.clone = is_clone
 #define UNICODE_DETECT  0x08
 #define M_UNICODE       0x6d
 #define W_UNICODE       0x77
-#define S_UNICODE       0x73
-#define STAP_DETECT     0x10
 
 #define TOUCH_HOLD_DOWN 0x80
 #define TOUCH_HOLD_UP   0x81
@@ -221,22 +217,6 @@ enum dynamic_config_id {
 	DC_ENABLE_GLOVE,
 	DC_PS_STATUS = 0xC1,
 	DC_DISABLE_ESD = 0xC2,
-	DC_FREQUENCE_HOPPING = 0xD2,
-	DC_TOUCH_HOLD = 0xD4,
-	DC_ERROR_PRIORITY = 0xD5,
-	DC_NOISE_LENGTH = 0xD6,
-	DC_GRIP_ROATE_TO_HORIZONTAL_LEVEL = 0xDC,
-	DC_DARK_ZONE_ENABLE = 0xDD,
-	DC_GRIP_ENABLED = 0xDE,
-	DC_GRIP_DARK_ZONE_X = 0xDF,
-	DC_GRIP_DARK_ZONE_Y = 0xE0,
-	DC_GRIP_ABS_DARK_X = 0xE1,
-	DC_GRIP_ABS_DARK_Y = 0xE2,
-	DC_GRIP_ABS_DARK_U = 0xE3,
-	DC_GRIP_ABS_DARK_V = 0xE4,
-	DC_GRIP_ABS_DARK_SEL = 0xE5,
-	DC_SET_REPORT_FRE = 0xE6,
-	DC_GESTURE_MASK = 0xFE,
 };
 
 enum command {
@@ -296,8 +276,6 @@ enum report_type {
 	REPORT_STATUS       = 0xc0,
 	REPORT_DEBUG        = 0x14,
 	REPORT_HDL          = 0xfe,
-	REPORT_LOG          = 0x1d,
-	REPORT_TOUCH_HOLD   = 0x20,
 };
 
 enum command_status {
@@ -466,7 +444,6 @@ struct syna_tcm_data {
 	struct touch_hcd *touch_hcd;
 	struct syna_tcm_test *test_hcd;
 	struct synaptics_proc_operations *syna_ops;
-	struct health_info health_info;
 
 	struct workqueue_struct *helper_workqueue;
 	struct work_struct helper_work;
@@ -474,13 +451,9 @@ struct syna_tcm_data {
 	atomic_t command_status;
 	char *iHex_name;
 	int *in_suspend;
-	u16 default_noise_length;
-	uint8_t touch_direction;
-	int display_refresh_rate;
-	bool game_mode;
 
 	unsigned short ubl_addr;
-	u32 trigger_reason;
+	unsigned char trigger_reason;
 	unsigned char command;
 	unsigned char report_code;
 	unsigned int read_length;
@@ -561,9 +534,8 @@ static inline int syna_tcm_realloc_mem(struct syna_tcm_buffer *buffer, unsigned 
 		buffer->buf = kmalloc(size, GFP_KERNEL);
 		if (!(buffer->buf)) {
 			TPD_INFO("%s: Failed to allocate memory\n", __func__);
-			buffer->buf = temp;
-			//kfree(temp);
-			//buffer->buf_size = 0;
+			kfree(temp);
+			buffer->buf_size = 0;
 			return -ENOMEM;
 		}
 
@@ -571,8 +543,8 @@ static inline int syna_tcm_realloc_mem(struct syna_tcm_buffer *buffer, unsigned 
 		if (retval < 0) {
 			TPD_INFO("%s: Failed to copy data\n", __func__);
 			kfree(temp);
-			//kfree(buffer->buf);
-			buffer->buf_size = size;
+			kfree(buffer->buf);
+			buffer->buf_size = 0;
 			return retval;
 		}
 

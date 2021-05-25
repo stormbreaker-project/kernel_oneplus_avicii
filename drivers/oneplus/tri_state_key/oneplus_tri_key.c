@@ -39,7 +39,7 @@
 #include <linux/timer.h>
 #include <linux/delay.h>
 #include <linux/time.h>
-#include <linux/notifier.h>
+
 
 #include <linux/string.h>
 #include <linux/version.h>
@@ -74,8 +74,6 @@ unsigned int tristate_extcon_tab[] = {
 static struct hrtimer tri_key_timer;
 struct work_struct tri_key_timeout_work;
 
-static BLOCKING_NOTIFIER_HEAD(tp_delta_print_chain);
-
 static struct extcon_dev_data *g_the_chip = NULL;
 static int last_d0 = 0;
 static int last_d1 = 0;
@@ -90,45 +88,14 @@ unsigned int tri_key_debug = 0;
 static short tol0 = 15;
 static short tol1 = 15;
 static short tol2 = 22;
-static short up_mid_tol = 15;
-static short up_tolerance = 15;
-static short down_tolerance = 15;
-static short mid_down_tol = 15;
-static float position_distance_degree = 0.2;
-static float position_degree = 0.4;
-static float side_position_degree = 1.1;
-static short up_mid_distance = 0;
-static short mid_down_distance = 0;
 static short calib_UpValueSum = 0, calib_MdValueSum = 0, calib_DnValueSum = 0;
 static short calib_UpValueMin = 0, calib_MdValueMin = 0, calib_DnValueMin = 0;
 static short calib_dnHall_UM_distance = 0, calib_dnHall_MD_distance = 0;
 static short calib_upHall_UM_distance = 0, calib_upHall_MD_distance = 0;
 static short calib_upHall_UD_distance = 0, calib_dnHall_UD_distance = 0;
 
-static int tp_delta_print_notifier_call_chain(unsigned long val);
 
-int register_tp_delta_print_notifier(struct notifier_block *nb)
-{
-	if (!nb)
-		return -EINVAL;
 
-	return blocking_notifier_chain_register(&tp_delta_print_chain, nb);
-}
-EXPORT_SYMBOL(register_tp_delta_print_notifier);
-
-int unregister_tp_delta_print_notifier(struct notifier_block *nb)
-{
-	if (!nb)
-		return -EINVAL;
-
-	return blocking_notifier_chain_unregister(&tp_delta_print_chain, nb);
-}
-EXPORT_SYMBOL(unregister_tp_delta_print_notifier);
-
-static int tp_delta_print_notifier_call_chain(unsigned long val)
-{
-	return blocking_notifier_call_chain(&tp_delta_print_chain, val, NULL);
-}
 
 int oneplus_register_hall(const char *name, struct dhall_operations *ops)
 {
@@ -487,30 +454,30 @@ static int get_position(struct extcon_dev_data *chip)
 	short diff;
 	diff = chip->dhall_data1 - chip->dhall_data0;
 	if (chip->dhall_data0 > 0) {
-		if (diff > calib_UpValueMin - up_mid_tol && diff < calib_UpValueMin + up_tolerance)
+		if (diff > calib_UpValueMin - tol1 && diff < calib_UpValueMin + tol2)
 			chip->position = UP_STATE;
 		if (calib_MdValueMin < 0) {
-			if (diff > calib_MdValueMin - mid_down_tol && diff < calib_MdValueMin + up_mid_tol)
+			if (diff > calib_MdValueMin - tol1 && diff < calib_MdValueMin + tol1)
 				chip->position = MID_STATE;
 			}
 		if (calib_MdValueMin > 0 || calib_MdValueMin == 0) {
-			if (diff > calib_MdValueMin - mid_down_tol && diff < calib_MdValueMin + up_mid_tol)
+			if (diff > calib_MdValueMin - tol1 && diff < calib_MdValueMin + tol1)
 				chip->position = MID_STATE;
 			}
-		if (diff > calib_DnValueMin - down_tolerance && diff < calib_DnValueMin + mid_down_tol)
+		if (diff > calib_DnValueMin - tol2 && diff < calib_DnValueMin + tol1)
 			chip->position = DOWN_STATE;
 	} else {
-		if (diff > calib_UpValueMin - up_tolerance && diff < calib_UpValueMin + up_mid_tol)
+		if (diff > calib_UpValueMin - tol2 && diff < calib_UpValueMin + tol1)
 			chip->position = UP_STATE;
 		if (calib_MdValueMin < 0) {
-			if (diff > calib_MdValueMin - mid_down_tol && diff < calib_MdValueMin + up_mid_tol)
+			if (diff > calib_MdValueMin - tol1 && diff < calib_MdValueMin + tol1)
 				chip->position = MID_STATE;
 			}
 		if (calib_MdValueMin > 0 || calib_MdValueMin == 0) {
-			if (diff > calib_MdValueMin - mid_down_tol && diff < calib_MdValueMin + up_mid_tol)
+			if (diff > calib_MdValueMin - tol1 && diff < calib_MdValueMin + tol1)
 				chip->position = MID_STATE;
 			}
-		if (diff > calib_DnValueMin - mid_down_tol && diff < calib_DnValueMin + down_tolerance)
+		if (diff > calib_DnValueMin - tol1 && diff < calib_DnValueMin + tol2)
 			chip->position = DOWN_STATE;
 	}
 	return 0;
@@ -526,7 +493,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 	sum = chip->dhall_data0 + chip->dhall_data1;
 	TRI_KEY_LOG("tri_key:sum is %d\n", sum);
 	if (chip->dhall_data1 > 0) {//the hall data is positive number
-		if (delta > calib_UpValueMin - up_mid_tol && delta < calib_UpValueMin + up_tolerance) {
+		if (delta > calib_UpValueMin - tol1 && delta < calib_UpValueMin + tol2) {
 			TRI_KEY_LOG("tri_key:calib_Min:%d,calib_Sum:%d\n", calib_UpValueMin, calib_UpValueSum);
 			if (sum < calib_UpValueSum - tol2 || sum > calib_UpValueSum + tol2) {
 				chip->interf = 1;
@@ -538,7 +505,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 			return 0;
 		}
 		if (calib_MdValueMin < 0) {
-			if (delta > calib_MdValueMin - mid_down_tol && delta < calib_MdValueMin + up_mid_tol) {
+			if (delta > calib_MdValueMin - tol1 && delta < calib_MdValueMin + tol1) {
 				TRI_KEY_LOG("tri_key:calibMin:%d,calib_Sum:%d\n", calib_MdValueMin, calib_MdValueSum);
 
 				if (sum > calib_MdValueSum + tol2 || sum < calib_MdValueSum - tol2) {
@@ -552,7 +519,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 			}
 		}
 		if (calib_MdValueMin > 0 || calib_MdValueMin == 0) {
-			if (delta > calib_MdValueMin - mid_down_tol && delta < calib_MdValueMin + up_mid_tol) {
+			if (delta > calib_MdValueMin - tol1 && delta < calib_MdValueMin + tol1) {
 				TRI_KEY_LOG("tri_key:calib_Min:%d,calib_Sum:%d\n", calib_MdValueMin, calib_MdValueSum);
 
 				if (sum > calib_MdValueSum + tol2 || sum < calib_MdValueSum - tol2) {
@@ -565,7 +532,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 				return 0;
 				}
 			}
-		if (delta > calib_DnValueMin - down_tolerance && delta < calib_DnValueMin + up_mid_tol) {
+		if (delta > calib_DnValueMin - tol2 && delta < calib_DnValueMin + tol1) {
 			TRI_KEY_LOG("tri_key:calib_Min:%d,calib_Sum:%d\n", calib_DnValueMin, calib_DnValueSum);
 
 			if (sum < calib_DnValueSum - tol2 || sum > calib_DnValueSum + tol2) {
@@ -580,7 +547,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 		chip->interf = 1;
 		chip->state = 0;
 	} else {//the hall data is negative number
-		if (delta > calib_UpValueMin - up_tolerance && delta < calib_UpValueMin + up_mid_tol) {
+		if (delta > calib_UpValueMin - tol2 && delta < calib_UpValueMin + tol1) {
 			TRI_KEY_LOG("tri_key:calib_Min:%d,calib_Sum:%d\n", calib_UpValueMin, calib_UpValueSum);
 
 			if (sum < calib_UpValueSum - tol2 || sum > calib_UpValueSum + tol2) {
@@ -593,7 +560,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 			return 0;
 		}
 		if (calib_MdValueMin < 0) {
-			if (delta > calib_MdValueMin - mid_down_tol && delta < calib_MdValueMin + up_mid_tol) {
+			if (delta > calib_MdValueMin - tol1 && delta < calib_MdValueMin + tol1) {
 				TRI_KEY_LOG("tri_key:calib_Min:%d,calib_Sum:%d\n", calib_MdValueMin, calib_MdValueSum);
 
 				if (sum > calib_MdValueSum + tol2 || sum < calib_MdValueSum - tol2) {
@@ -607,7 +574,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 			}
 		}
 		if (calib_MdValueMin > 0 || calib_MdValueMin == 0) {
-			if (delta > calib_MdValueMin - mid_down_tol && delta < calib_MdValueMin + up_mid_tol) {
+			if (delta > calib_MdValueMin - tol1 && delta < calib_MdValueMin + tol1) {
 				TRI_KEY_LOG("tri_key:calib_Min:%d,calib_Sum:%d\n", calib_MdValueMin, calib_MdValueSum);
 
 				if (sum > calib_MdValueSum + tol2 || sum < calib_MdValueSum - tol2) {
@@ -620,7 +587,7 @@ static int judge_interference(struct extcon_dev_data *chip)
 				return 0;
 				}
 			}
-		if (delta > calib_DnValueMin - mid_down_tol && delta < calib_DnValueMin + down_tolerance) {
+		if (delta > calib_DnValueMin - tol1 && delta < calib_DnValueMin + tol2) {
 			TRI_KEY_LOG("tri_key:calib_Min:%d,calib_Sum:%d\n", calib_DnValueMin, calib_DnValueSum);
 
 			if (sum < calib_DnValueSum - tol2 || sum > calib_DnValueSum + tol2) {
@@ -752,8 +719,6 @@ fail:
 
 static void report_key_value(struct extcon_dev_data *chip)
 {
-	tp_delta_print_notifier_call_chain(1);
-
 	if (chip->position == DOWN_STATE) {
 		extcon_set_state_sync(chip->edev, 1, 0);
 		extcon_set_state_sync(chip->edev, 2, 1);
@@ -894,7 +859,7 @@ static void tri_key_dev_work(struct work_struct *work)
 			get_position(chip);
 		TRI_KEY_LOG("tri_key:the position is %d\n", chip->position);
 		} else {
-			msleep(150);
+			msleep(50);
 			oneplus_get_data(chip);
 			judge_interference(chip);
 			if (chip->interf)
@@ -1128,16 +1093,6 @@ void initialCalibValue(short calib_dnHall_UpV, short calib_dnHall_MdV,
 	calib_dnHall_MD_distance = Minus(calib_dnHall_MdV, calib_dnHall_DnV);
 	calib_upHall_UD_distance = Minus(calib_upHall_UpV, calib_upHall_DnV);
 	calib_dnHall_UD_distance = Minus(calib_dnHall_UpV, calib_dnHall_DnV);
-	if (g_the_chip->project_info){
-	up_mid_tol = (short)(abs(calib_UpValueMin - calib_MdValueMin) * position_degree);
-	up_tolerance = (short)(abs(calib_UpValueMin - calib_MdValueMin) * side_position_degree);
-	mid_down_tol = (short)(abs(calib_MdValueMin - calib_DnValueMin) * position_degree);
-	down_tolerance = (short)(abs(calib_MdValueMin - calib_DnValueMin) * side_position_degree);
-	up_mid_distance = (short)(abs(calib_UpValueMin - calib_MdValueMin) * position_distance_degree);
-	mid_down_distance = (short)(abs(calib_MdValueMin - calib_DnValueMin) * position_distance_degree);
-	}
-	TRI_KEY_LOG("Upmin:%d, Mdmin:%d, Dnmin:%d, up_mid_tol:%d, mid_down_tol:%d\n",
-		calib_UpValueMin, calib_MdValueMin, calib_DnValueMin, up_mid_tol,mid_down_tol);
 }
 
 
@@ -1148,11 +1103,10 @@ static ssize_t hall_data_calib_show(struct device *dev,
 		TRI_KEY_ERR("g_the_chip null\n");
 		return snprintf(buf, PAGE_SIZE, "%d\n%d\n",-1,-1);
 	}
-	return snprintf(buf, PAGE_SIZE, "%d,%d,%d,%d,%d,%d,%d,%d\n",
+	return snprintf(buf, PAGE_SIZE, "%d,%d,%d,%d,%d,%d\n",
 		g_the_chip->dnHall_UpV, g_the_chip->upHall_UpV,
 		g_the_chip->dnHall_MdV, g_the_chip->upHall_MdV,
-		g_the_chip->dnHall_DnV, g_the_chip->upHall_DnV,
-		up_mid_tol, mid_down_tol);
+		g_the_chip->dnHall_DnV, g_the_chip->upHall_DnV);
 }
 
 static ssize_t hall_data_calib_store(struct device *pdev,
@@ -1308,9 +1262,7 @@ static int tri_key_platform_probe(struct platform_device *pdev)
 	int err = 0;
 	int res = 0;
 	//int hall_value_min = 0;
-	struct device_node *np;
 
-	np = pdev->dev.of_node;
 	TRI_KEY_LOG("call %s\n", __func__);
 
 	if (!g_the_chip) {
@@ -1325,8 +1277,6 @@ static int tri_key_platform_probe(struct platform_device *pdev)
 	}
 	mutex_init(&chip->mtx);
 	chip->dev = &pdev->dev;
-	chip->project_info = of_property_read_bool(np, "project_info");
-	TRI_KEY_LOG("project_info is %d\n", chip->project_info);
 	err = sysfs_create_group(&pdev->dev.kobj, &tri_key_attribute_group);
 	if (err) {
 		TRI_KEY_ERR("tri_key:sysfs_create_group was failed(%d)\n", err);

@@ -1,13 +1,13 @@
 /***********************************************************
-* Description : OnePlus touchpanel driver
-* 
-* File		  : touch_interfaces.h
-*
-* Function	  : touchpanel public interface
-* 
-* Version	  : V1.0
-*
-***********************************************************/
+ * Description : OnePlus touchpanel driver
+ *
+ * File		  : touch_interfaces.h
+ *
+ * Function	  : touchpanel public interface
+ *
+ * Version	  : V1.0
+ *
+ ***********************************************************/
 #include <linux/spi/spi.h>
 #ifndef TOUCH_INTERFACES_H
 #define TOUCH_INTERFACES_H

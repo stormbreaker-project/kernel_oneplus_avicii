@@ -349,7 +349,7 @@ static irqreturn_t m1120_up_irq_handler(int irq, void *dev_id)
 	}
 
 	disable_irq_nosync(p_m1120_data->irq);
-	__pm_wakeup_event(p_m1120_data->source, 2000);
+	__pm_wakeup_event(&p_m1120_data->source, 2000);
 	oneplus_hall_irq_handler(0);//DHALL_UP
 
 	return IRQ_HANDLED;
@@ -1342,7 +1342,7 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 
     /*(11) register ops to abstrace level*/
     oneplus_register_hall("hall_up",&m1120_ups_ops);
-	p_m1120_data->source = wakeup_source_register(&client->dev, "hall_up");
+	wakeup_source_init(&p_m1120_data->source, "hall_up");
 
     printk(KERN_INFO "======> i2c addr : %d\n", client->addr);
     /*(12) imigrate p_data to p_m1120_data*/

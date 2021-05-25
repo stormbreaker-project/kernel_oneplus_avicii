@@ -142,118 +142,17 @@ struct fw_update_info {
 	struct fw_info  *firmware;
 };
 
-typedef enum {
-    BASE_DC_COMPONENT =0X01,
-    BASE_SYS_UPDATE =0X02,
-    BASE_NEGATIVE_FINGER = 0x03,
-    BASE_MONITOR_UPDATE= 0x04,
-    BASE_CONSISTENCE = 0x06,
-    BASE_FORCE_UPDATE = 0x07,
-} BASELINE_ERR;
-
-typedef enum {
-    RST_MAIN_REG = 0x01,
-    RST_OVERLAY_ERROR = 0x02,
-    RST_LOAD_OVERLAY = 0x03,
-    RST_CHECK_PID = 0x04,
-    RST_CHECK_RAM = 0x06,
-    RST_CHECK_RAWDATA = 0x07,
-} RESET_REASON;
-
-struct goodix_health_info {
-    uint8_t   shield_water:1;
-    uint8_t   shield_freq:1;
-    uint8_t   baseline_refresh:1;
-    uint8_t   fw_rst:1;
-    uint8_t   shield_esd:1;
-    uint8_t   reserve_bit:4;
-    uint8_t   shield_palm:1;
-    uint8_t   baseline_status:1;
-    uint8_t   ub_freqhop_status:1;
-    uint8_t   noise_stutus:1;
-    uint8_t   reserve;
-    uint8_t   water_mode;
-    uint8_t   water_status;
-    uint8_t   freq_before;
-    uint8_t   freq_before_l;
-    uint8_t   freq_before_h;
-    uint8_t   freq_after;
-    uint8_t   freq_after_l;
-    uint8_t   freq_after_h;
-    uint8_t   baseline_refresh_type;
-    uint8_t   esd_raw;
-    uint8_t   reset_reason;
-    uint8_t   large_palm_status;
-    uint8_t   baseline_study_status;
-    uint8_t   ub_freqhop_type;
-    uint8_t   last_noise_value_l;
-    uint8_t   last_noise_value_h;
-    uint8_t   current_noise_value_l; 
-    uint8_t   current_noise_value_h;
-    uint8_t   reserve1;
-    uint8_t   reserve2;
-    uint8_t   reserve3;
-    uint8_t   reserve4;
-    uint8_t   reserve5;
-    uint8_t   reserve6;
-    uint8_t   reserve7;
-    uint8_t   abs_max_l;
-    uint8_t   abs_max_h;
-    uint8_t   abs_avg_l;
-    uint8_t   abs_avg_h;
-    int8_t    mutualdif_max_l;
-    int8_t	   mutualdif_max_h;
-    int8_t	   mutualdif_min_l;
-    int8_t	   mutualdif_min_h;
-    int8_t	   selftx_diff_max_l;
-    int8_t	   selftx_diff_max_h;
-    int8_t	   selftx_diff_min_l;
-    int8_t	   selftx_diff_min_h;
-    int8_t	   selfrx_diff_max_l;
-    int8_t	   selfrx_diff_max_h;
-    int8_t	   selfrx_diff_min_l;
-    int8_t	   selfrx_diff_min_h;
-    uint8_t   touch_num;
-    uint8_t   rectnum; 
-    uint8_t   reserve8;
-    uint8_t   reserve9;
-    uint8_t   reserve10;
-    uint8_t   reserve11;
-    uint8_t   reserve12;
-    uint8_t   reserve13;
-    uint8_t   reserve14;
-    uint8_t   checksum;
-    uint8_t   checksum0;
-    uint8_t   checksum1;
-};
-
-
-
-
 
 /****************************PART3:FUNCTION*************************************/
-#define I2C_MAX_TRANSFER_SIZE		255
-#define GOODIX_BUS_RETRY_TIMES		3
-#define GOODIX_REG_ADDR_SIZE		4
-
-
-
-
 void GetCirclePoints(struct Coordinate *input_points, int number, struct Coordinate  *pPnts);
 int ClockWise(struct Coordinate *p, int n);
 int Goodix_create_proc(struct touchpanel_data *ts, struct goodix_proc_operations *goodix_ops);
-int  gt988x_parse_csvfile(const struct firmware *fw, char *target_name, int32_t  *data, int rows, int columns);
 
 uint32_t search_for_item_offset(const struct firmware *fw, int item_cnt, uint8_t item_index);
 int32_t *getpara_for_item(const struct firmware *fw, uint8_t item_index, uint32_t *para_num);
 struct test_item_info *get_test_item_info(const struct firmware *fw, uint8_t item_index);
 void goodix_limit_read(struct seq_file *s, struct touchpanel_data *ts);
 void tp_kfree(void **mem);
-
-int touch_i2c_read_block_u32(struct i2c_client *client, u32 reg,unsigned int len, unsigned char *data);
-int touch_i2c_write_block_u32(struct i2c_client *client, u32 reg,unsigned int len, unsigned char const *data);
-
-
 
 #endif
 

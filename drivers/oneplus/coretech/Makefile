@@ -4,11 +4,14 @@ ifeq ($(CORE_PATH),$(wildcard $(CORE_PATH)))
 obj-$(CONFIG_OPCHAIN) += uxcore/core/
 endif
 
-obj-$(CONFIG_MEMPLUS) += memplus/
-CORE_PATH = $(KBUILD_SRC)/drivers/oneplus/coretech/memplus/core
-ifeq ($(CORE_PATH),$(wildcard $(CORE_PATH)))
-obj-$(CONFIG_MEMPLUS) += memplus/core/
-endif
+
+obj-$(CONFIG_MEMEX_STANDALONE) += memplus/core/
+
+#obj-$(CONFIG_MEMPLUS) += memplus/
+#CORE_PATH = $(KBUILD_SRC)/drivers/oneplus/coretech/memplus/core
+#ifeq ($(CORE_PATH),$(wildcard $(CORE_PATH)))
+#obj-$(CONFIG_MEMPLUS) += memplus/core/
+#endif
 
 obj-$(CONFIG_SMART_BOOST) += smartboost/
 CORE_PATH = $(KBUILD_SRC)/drivers/oneplus/coretech/smartboost/core
@@ -29,8 +32,4 @@ obj-$(CONFIG_IM) += im/
 obj-$(CONFIG_PCCORE) += pccore/
 obj-$(CONFIG_VM_FRAGMENT_MONITOR) += vm_fragment_monitor/
 obj-$(CONFIG_UXCHAIN) += uxchain/
-obj-$(CONFIG_TPD) += tpd/
-obj-$(CONFIG_TPP) += tpp/
-obj-$(CONFIG_MEMEX_STANDALONE) += memex_standalone_support/core/
 obj-$(CONFIG_RATP) += ratp/
-obj-$(CONFIG_ZWB_HANDLE) += zwb_handle/

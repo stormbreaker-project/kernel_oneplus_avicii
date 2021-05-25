@@ -78,58 +78,49 @@ EXPORT_SYMBOL(parse_function_builtin_return_address);
 
 void save_dump_reason_to_smem(char *info, char *function_name)
 {
-	int strl = 0, strl1 = 0, length = 0;
+	int length = 0;
 	size_t size;
-	static int flag = 0;
-	char buf[7], *buf1;
+	static int flag;
+	char *buf1;
 	struct pt_regs *regs;
 	char *caller_function_name;
 
 	/* Make sure save_dump_reason_to_smem() is not
-	called infinite times by nested panic caller fns etc*/
+	 * called infinite times by nested panic caller fns etc
+	 */
 	if (flag > 1)
 		return;
 
-	dp_info = qcom_smem_get(QCOM_SMEM_HOST_ANY,SMEM_DUMP_INFO,&size);
+	dp_info = qcom_smem_get(QCOM_SMEM_HOST_ANY, SMEM_DUMP_INFO, &size);
 
 	if (IS_ERR_OR_NULL(dp_info))
 		pr_debug("%s: get dp_info failure\n", __func__);
 	else {
-		pr_debug("%s: info : %s\n",__func__, info);
+		pr_debug("%s: info : %s\n", __func__, info);
 
-		strl   = strlen(info)+1;
-		strl1  = strlen(function_name)+1;
-		strl   = strl  <  DUMP_REASON_SIZE ? strl : DUMP_REASON_SIZE;
-		strl1  = strl1 <  DUMP_REASON_SIZE ? strl1: DUMP_REASON_SIZE;
-		if ((strlen(dp_info->dump_reason) + strl) < DUMP_REASON_SIZE)
-			strncat(dp_info->dump_reason, info, strl);
-
-		if (function_name != NULL &&
-			((strlen(dp_info->dump_reason) + strl1 + 3) < DUMP_REASON_SIZE)) {
-			strncat(dp_info->dump_reason, "\r\n", 2);
-			strncat(dp_info->dump_reason, function_name, strl1);
+		if (info != NULL) {
+			strlcat(dp_info->dump_reason, info, DUMP_REASON_SIZE);
 		}
-
+		if (function_name != NULL) {
+			strlcat(dp_info->dump_reason, "\r\n", DUMP_REASON_SIZE);
+			strlcat(dp_info->dump_reason, function_name, DUMP_REASON_SIZE);
+			pr_debug("%s: function caused panic :%s\n", __func__,
+				function_name);
+		}
 		caller_function_name = parse_function_builtin_return_address(
 			(unsigned long)__builtin_return_address(0));
 		if ((strcmp(caller_function_name, "panic") == 0)) {
 			regs = (struct pt_regs *)panic_info;
 			if (regs) {
 				buf1 = parse_regs_pc(regs->pc, &length);
-				length = length < DUMP_REASON_SIZE ? length: DUMP_REASON_SIZE;
-				if ((strlen(dp_info->dump_reason) + length + 12) < DUMP_REASON_SIZE) {
-					strncat(dp_info->dump_reason,"\r\n", 2);
-					strncpy(buf, "PC at:", 7);
-					strncat(dp_info->dump_reason, buf, 7);
-					strncat(dp_info->dump_reason, buf1, length);
-					strncat(dp_info->dump_reason, "\r\n", 2);
-				}
+				strlcat(dp_info->dump_reason, "\r\nPC at:", DUMP_REASON_SIZE);
+				strlcat(dp_info->dump_reason, buf1, DUMP_REASON_SIZE);
+				strncat(dp_info->dump_reason, "\r\n", DUMP_REASON_SIZE);
 			}
 		}
 	}
-
-	pr_debug("\r%s: dump_reason : %s strl=%d function caused panic :%s strl1=%d \n", __func__,
-			dp_info->dump_reason, strl, function_name, strl1);
+	pr_debug("\r%s: dump_reason : %s \n", __func__,
+		dp_info->dump_reason);
 	save_dump_reason_to_device_info(dp_info->dump_reason);
 	flag++;
 }
@@ -576,42 +567,21 @@ struct a_board_version a_board_version_string_arry_gpio[]={
 
     {0,   "NOQET"},
     {1,   "QET"},
+    {2,   "QET_New"},
 };
 
 struct main_board_info main_board_info_check[]={
-	/*  prj      hw       rf        version*/
-	{   11     ,  11     , NONDEFINE      ,"19811 T0"},
-	{   11     ,  12     , NONDEFINE      ,"19811 EVT1"},
-	{   11     ,  13     , NONDEFINE      ,"19811 EVT2"},
-	{   11     ,  14     , NONDEFINE      ,"19811 DVT"},
-	{   11     ,  15     , NONDEFINE      ,"19811 PVT/MP"},
-	{   11     ,  51     , NONDEFINE      ,"19811 EVT2 SEC"},
-	{   11     ,  52     , NONDEFINE      ,"19811 DVT SEC"},
-	{   11     ,  53     , NONDEFINE      ,"19811 PVT/MP SEC"},
-
-	{   12     ,  11     , 12     ,"19855 T0"},
-	{   12     ,  12     , 12     ,"19855 EVT1"},
-	{   12     ,  13     , 12     ,"19855 EVT2"},
-	{   12     ,  14     , 12     ,"19855 DVT"},
-	{   12     ,  15     , 12     ,"19855 PVT/MP"},
-
-
-	{   12     ,  11     , NONDEFINE      ,"19821 T0"},
-	{   12     ,  12     , NONDEFINE      ,"19821 EVT1"},
-	{   12     ,  13     , NONDEFINE      ,"19821 EVT2"},
-	{   12     ,  14     , NONDEFINE      ,"19821 DVT"},
-	{   12     ,  54     , NONDEFINE      ,"19821 EVT2 SEC"},
-	{   12     ,  55     , NONDEFINE      ,"19821 DVT SEC"},
-	{   12     ,  15     , NONDEFINE      ,"19821 PVT/MP"},
-
-	{   13     ,  11     , NONDEFINE      ,"19867 T0"},
-	{   13     ,  12     , NONDEFINE      ,"19867 EVT1"},
-	{   13     ,  13     , NONDEFINE      ,"19867 EVT2"},
-	{   13     ,  14     , NONDEFINE      ,"19867 DVT"},
-	{   13     ,  15     , NONDEFINE      ,"19867 PVT/MP"},
-
-	{   11     ,  11     ,NONDEFINE,"19811 T0"},
-	{NONDEFINE,NONDEFINE,NONDEFINE,"Unknown"}
+    /*  prj      hw       rf        version*/
+    {   11     ,  11     , 13      ,"20801 T0"},
+    {   11     ,  11     , 14      ,"20801 T0"},
+    {   11     ,  12     , 13      ,"20801 EVT1"},
+    {   11     ,  12     , 14      ,"20801 EVT1"},
+    {   11     ,  13     , 13      ,"20801 DVT"},
+    {   11     ,  13     , 14      ,"20801 DVT"},
+    {   11     ,  14     , 13      ,"20801 PVT"},
+    {   11     ,  14     , 14      ,"20801 PVT"},
+    /* Add the prj, hw, rf as per the project stage */
+    {NONDEFINE,NONDEFINE,NONDEFINE,"Unknown"}
 };
 
 uint32 get_hw_version(void)
@@ -620,8 +590,10 @@ uint32 get_hw_version(void)
 
     project_info_desc = qcom_smem_get(QCOM_SMEM_HOST_ANY,SMEM_PROJECT_INFO, &size);
 
-    if (IS_ERR_OR_NULL(project_info_desc))
+    if (IS_ERR_OR_NULL(project_info_desc)) {
         pr_err("%s: get project_info failure\n", __func__);
+        project_info_desc = NULL;
+    }
     else {
         pr_err("%s: hw version: %d\n", __func__,
             project_info_desc->hw_version);
@@ -658,6 +630,7 @@ int __init init_project_info(void)
 
     if (IS_ERR_OR_NULL(project_info_desc)) {
         pr_err("%s: get project_info failure\n", __func__);
+	project_info_desc = NULL;
         return -1;
     }
     pr_err("%s: project_name: %s hw_version: %d prj=%d rf_v1: %d rf_v2: %d: rf_v3: %d  paltform_id:%d\n",
@@ -698,8 +671,8 @@ int __init init_project_info(void)
 
     get_ddr_manufacture_name();
 
-	/* approximate as ceiling of total pages */
-	ddr_size = (totalram_pages + (1 << 18) - 1) >> 18;
+    /* approximate as ceiling of total pages */
+    ddr_size = (totalram_pages + (1 << 18) - 1) >> 18;
 
     snprintf(ddr_version, sizeof(ddr_version), "size_%dG_r_%d_c_%d",
         ddr_size, project_info_desc->ddr_row,
@@ -728,6 +701,7 @@ struct aboard_data {
     struct pinctrl                      *pinctrl;
     struct pinctrl_state                *pinctrl_state_active;
     struct pinctrl_state                *pinctrl_state_sleep;
+    struct pinctrl_state                *pinctrl_state_suspend;
     struct device *dev;
 };
 static struct aboard_data *data;
@@ -759,16 +733,32 @@ static int op_aboard_read_gpio(void)
 {
     int gpio0 = 0;
     int gpio1 = 0;
+    int rc = 0;
+
     if ( data == NULL || IS_ERR_OR_NULL(project_info_desc))
     {
         return 0 ;
     }
-    if(data->support_aboard_gpio_0 == 1)
-        gpio0 = gpio_get_value(data->aboard_gpio_0);
-    if(data->support_aboard_gpio_1 == 1)
-        gpio1 = gpio_get_value(data->aboard_gpio_1);
 
-	a_board_val = gpio0;
+    rc = pinctrl_select_state(data->pinctrl,data->pinctrl_state_active);
+    if ( !rc) {
+        pr_err("%s: Failed to set active for aboardgpio\n", __func__);
+    }
+
+    if(data->support_aboard_gpio_0 == 1)
+        gpio_direction_input(data->aboard_gpio_0);
+
+    gpio0 = gpio_get_value(data->aboard_gpio_0);
+
+    rc = pinctrl_select_state(data->pinctrl,data->pinctrl_state_suspend);
+    if ( !rc) {
+        pr_err("%s: Failed to set suspend for aboardgpio\n", __func__);
+    }
+
+    gpio_direction_input(data->aboard_gpio_0);
+    gpio1 = gpio_get_value(data->aboard_gpio_0);
+
+    a_board_val = gpio0 + gpio1;
     snprintf(Aboard_version, sizeof(Aboard_version), "%d %s",
     a_board_val, a_board_version_string_arry_gpio[a_board_val].name);
 
@@ -804,7 +794,7 @@ static int oem_aboard_probe(struct platform_device *pdev)
     }else{
        data->support_aboard_gpio_1 = 1;
     }
-    
+
     data->pinctrl = devm_pinctrl_get((data->dev));
     if (IS_ERR_OR_NULL(data->pinctrl)) {
         rc = PTR_ERR(data->pinctrl);
@@ -820,9 +810,16 @@ static int oem_aboard_probe(struct platform_device *pdev)
         goto err_pinctrl_lookup;
     }
 
-    if (data->pinctrl) {
-        rc = pinctrl_select_state(data->pinctrl,data->pinctrl_state_active);
+    data->pinctrl_state_suspend = pinctrl_lookup_state(data->pinctrl, "oem_aboard_suspend");
+
+    if (IS_ERR_OR_NULL(data->pinctrl_state_suspend)) {
+        rc = PTR_ERR(data->pinctrl_state_suspend);
+        pr_err("%s pinctrl state suspend error!\n",__func__);
+        goto err_pinctrl_lookup;
     }
+
+    rc = pinctrl_select_state(data->pinctrl,data->pinctrl_state_active);
+
     if(data->support_aboard_gpio_0 == 1)
         gpio_direction_input(data->aboard_gpio_0);
     if(data->support_aboard_gpio_1 == 1)
@@ -837,7 +834,7 @@ static int oem_aboard_probe(struct platform_device *pdev)
 
     pr_err("%s: probe finish!\n", __func__);
     return 0;
-    
+
 err_pinctrl_lookup:
     devm_pinctrl_put(data->pinctrl);
 err_pinctrl_get:

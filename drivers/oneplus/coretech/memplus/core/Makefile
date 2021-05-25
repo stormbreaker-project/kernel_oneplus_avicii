@@ -1,1 +1,1 @@
-obj-$(CONFIG_MEMPLUS) += memplus_core.o
+obj-$(CONFIG_MEMEX_STANDALONE) += memplus_core.o

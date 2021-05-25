@@ -1,6 +1,5 @@
 #ifndef _MEMORY_PLUS_H
 #define _MEMORY_PLUS_H
-#include <oneplus/memplus/memplus_helper.h>
 #define AID_APP	10000  /* first app user */
 
 enum {

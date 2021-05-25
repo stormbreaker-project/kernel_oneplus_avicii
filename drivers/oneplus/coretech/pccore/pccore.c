@@ -43,6 +43,7 @@ unsigned int get_op_mode(void)
 }
 EXPORT_SYMBOL(get_op_mode);
 
+//2020/04/04 to accommodate the SM7250_AC
 static unsigned int *get_cluster_arr(int cpu)
 {
 
@@ -51,9 +52,9 @@ static unsigned int *get_cluster_arr(int cpu)
 	case 1:
 	case 2:
 	case 3:
-		return cpufreq_pd_0;
 	case 4:
 	case 5:
+		return cpufreq_pd_0;
 	case 6:
 		return cpufreq_pd_1;
 	case 7:
@@ -62,6 +63,7 @@ static unsigned int *get_cluster_arr(int cpu)
 	return NULL;
 }
 
+//2020/04/04 to accommodate the SM7250_AC
 static int get_cluster(int cpu)
 {
 	int err = -1;
@@ -71,9 +73,9 @@ static int get_cluster(int cpu)
 	case 1:
 	case 2:
 	case 3:
-		return 0;
 	case 4:
 	case 5:
+		return 0;
 	case 6:
 		return 1;
 	case 7:

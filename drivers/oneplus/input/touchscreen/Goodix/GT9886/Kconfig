@@ -1,5 +1,5 @@
 config TOUCHPANEL_GOODIX_GT9886
    default y
-    bool "TP goodix gt9886 IC enable or not for OPPO"
+    bool "TP goodix gt9886 IC enabled"
     ---help---
     say Y to enable driver for Touchpanel useing goodix gt9886

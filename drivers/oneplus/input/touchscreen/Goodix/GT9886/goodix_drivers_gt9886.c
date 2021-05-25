@@ -16,7 +16,7 @@
 extern int tp_register_times;
 extern struct touchpanel_data *g_tp;
 #define PM_QOS_VALUE_TP 200
-extern struct pm_qos_request pm_qos_req_stp;
+struct pm_qos_request pm_qos_req_stp;
 
 //function delcare
 static int goodix_reset(void *chip_data);
@@ -25,7 +25,6 @@ static void gtx8_check_setting_group(struct gtx8_ts_test *ts_test, struct short_
 static int goodix_enable_fingerprint_touchhold(struct chip_data_gt9886 *chip_info, uint32_t enable);
 static int goodix_enable_gesture_mask(void *chip_data, uint32_t enable);
 static int goodix_power_control(void *chip_data, bool enable);
-
 
 /********** Start of special i2c tranfer interface used for goodix read/write*****************/
 /**
@@ -301,7 +300,6 @@ static int goodix_clear_irq(void *chip_data)
 			TPD_INFO("I2C write end_cmd  error!\n");
 		}
 	}
-
 	return ret;
 }
 
@@ -423,12 +421,14 @@ static int goodix_enable_edge_limit(struct chip_data_gt9886 *chip_info, int stat
 	int ret = -1;
 
 	TPD_INFO("%s, direction is %d\n", __func__, g_tp->limit_switch);
+
 	if (g_tp->limit_switch ==1)//LANDSCAPE 90
 		ret = goodix_send_cmd(chip_info, GTM_CMD_EDGE_LIMIT_LANDSCAPE, 0x00);
 	else if (g_tp->limit_switch == 3)//LANDSCAPE 270
 		ret = goodix_send_cmd(chip_info, GTM_CMD_EDGE_LIMIT_LANDSCAPE, 0x01);
 	else
 		ret = goodix_send_cmd(chip_info, GTM_CMD_EDGE_LIMIT_VERTICAL, 0x00);
+
 	return ret;
 }
 
@@ -2122,6 +2122,7 @@ static u32 goodix_u32_trigger_reason(void *chip_data, int gesture_enable, int is
 
 	if (chip_info->is_power_down) {
 		TPD_INFO("%s: power down, just return\n", __func__);
+		//pm_qos_remove_request(&pm_qos_req_stp);/* not required here */
 		return IRQ_IGNORE;
 	}
 
@@ -2195,7 +2196,7 @@ static u32 goodix_u32_trigger_reason(void *chip_data, int gesture_enable, int is
 		return IRQ_FW_CONFIG;
 	}
 	if (unlikely((chip_info->touch_data[0] & GOODIX_FINGER_STATUS_EVENT) == GOODIX_FINGER_STATUS_EVENT)) {
-		SET_BIT(result_event, IRQ_DATA_LOGGER);
+		SET_BIT(result_event, IRQ_FW_HEALTH);
 	}
 
 	chip_info->touch_data[BYTES_PER_COORD * touch_num + 2] = 0;
@@ -2221,8 +2222,6 @@ static u32 goodix_u32_trigger_reason(void *chip_data, int gesture_enable, int is
 			return IRQ_IGNORE;
 		}
 	}
-	else
-		pm_qos_remove_request(&pm_qos_req_stp);
 	return  result_event;
 
 IGNORE_CLEAR_IRQ:
@@ -2298,6 +2297,7 @@ static int goodix_get_gesture_info(void *chip_data, struct gesture_info *gesture
 	ret = touch_i2c_read_block(chip_info->client, chip_info->reg_info.GTP_REG_WAKEUP_GESTURE, sizeof(doze_buf), doze_buf);
 	if (ret < 0) {
 		TPD_INFO("%s: read gesture info i2c faild\n", __func__);
+		//pm_qos_remove_request(&pm_qos_req_stp); /* not required here */
 		return -1;
 	}
 
@@ -2769,7 +2769,6 @@ static int goodix_fw_handle(void *chip_data)
 	ret = goodix_request_event_handler(chip_info);
 	ret |= goodix_clear_irq(chip_info);
 
-	pm_qos_remove_request(&pm_qos_req_stp);
 	return ret;
 }
 
@@ -2830,7 +2829,7 @@ struct touchpanel_operations goodix_ops = {
 	.set_touch_direction         = goodix_set_touch_direction,
 	.get_touch_direction         = goodix_get_touch_direction,
 	.specific_resume_operate     = goodix_specific_resume_operate,
-	.health_report_1               = goodix_get_health_info,
+	.health_report               = goodix_get_health_info,
 	.enable_single_tap           = goodix_enable_single_tap,
 };
 /********* End of implementation of touchpanel_operations callbacks**********************/

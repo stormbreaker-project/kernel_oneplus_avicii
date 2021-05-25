@@ -23,7 +23,6 @@
 #include <linux/module.h>
 #include <linux/of_gpio.h>
 #include <linux/oem/op_rf_cable_monitor.h>
-#include <linux/oem/boot_mode.h>
 #include <linux/oem/project_info.h>
 #include <linux/platform_device.h>
 #include <linux/kdev_t.h>
@@ -33,13 +32,7 @@
 static struct class *rf_uevent_class;
 static struct device *rf_uevent_device;
 static struct project_info *project_info_desc;
-
-#ifdef CONFIG_ARCH_LITO
-#define CABLE_GPIO_NUM 3
-#else
-#define CABLE_GPIO_NUM 4
-#endif
-
+#define CABLE_GPIO_NUM 3 
 struct cable_data {
 	int irq[CABLE_GPIO_NUM];
 	int cable_gpio[CABLE_GPIO_NUM];
@@ -47,7 +40,7 @@ struct cable_data {
 	struct delayed_work work;
 	struct workqueue_struct *wqueue;
 	struct device *dev;
-	struct wakeup_source *wl;
+	struct wakeup_source wl;
 	int rf_v2;
 	int rf_v3;
 	int rf_v3_pre;
@@ -115,13 +108,7 @@ int get_all_gpio_val(void)
 	int gpiostate = 0;
 	for(i = 0; i< CABLE_GPIO_NUM; i++)
 		gpiostate = gpiostate + (gpio_get_value(rf_cable_data->cable_gpio[i]) * local_pow(10, CABLE_GPIO_NUM - i - 1));
-	/*only 19811 china and 19821 china use ANT6(gpio109)*/
-	if((get_prj_version() == 12 && get_rf_version() == 11) 
-		||(get_prj_version() == 11 && get_rf_version() == 11)
-		||(get_prj_version() == 14))
-		return gpiostate;
-	else
-		return gpiostate - gpiostate % 10;
+	return gpiostate;
 }
 
 static void irq_cable_enable(int enable)
@@ -211,7 +198,7 @@ irqreturn_t cable_interrupt(int irq, void *_dev)
 
 	rf_cable_data->gpio_state = get_all_gpio_val();
 
-	__pm_wakeup_event(rf_cable_data->wl,
+	__pm_wakeup_event(&rf_cable_data->wl,
 		msecs_to_jiffies(CABLE_WAKELOCK_HOLD_TIME));
 	queue_delayed_work(rf_cable_data->wqueue,
 		&rf_cable_data->work, msecs_to_jiffies(500));
@@ -220,6 +207,7 @@ irqreturn_t cable_interrupt(int irq, void *_dev)
 static void factory_mode_state_change(int state)
 {
 	modify_rf_v2_info(state);
+	op_restart_modem();
 }
 
 static ssize_t rf_factory_mode_proc_read_func(struct file *file,
@@ -539,7 +527,7 @@ static int op_rf_cable_probe(struct platform_device *pdev)
 		}
 	}
 
-	rf_cable_data->wl = wakeup_source_register(rf_cable_data->dev,"rf_cable_wake_lock");
+	wakeup_source_init(&rf_cable_data->wl,"rf_cable_wake_lock");
 	spin_lock_init(&rf_cable_data->lock);
 
 	for(i = 0; i < CABLE_GPIO_NUM; i++) {

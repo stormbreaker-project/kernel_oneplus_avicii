@@ -90,7 +90,6 @@ struct dhall_operations {
 	const char *m_name;
 	int		position;
 	int		last_position;
-	int		project_info;	//just for kebat project
 	int		interf;//interference
 	short		state;
 	short		dhall_data0;
@@ -114,8 +113,6 @@ struct dhall_operations {
 	//bool        is_irq_abnormal;
 };
 
-extern int register_tp_delta_print_notifier(struct notifier_block *nb);
-extern int unregister_tp_delta_print_notifier(struct notifier_block *nb);
 extern int oneplus_register_hall(const char *name, struct dhall_operations *ops);
 //dhall control api
 extern int oneplus_hall_get_data(unsigned int id);
