@@ -252,11 +252,9 @@ static ssize_t acl_show(struct device *dev,
 	acl_mode = dsi_display_get_acl_mode(connector);
 
 	ret = scnprintf(buf, PAGE_SIZE, "acl mode = %d\n"
-									"0--acl mode(off)\n"
-									"1--acl mode(5)\n"
-									"2--acl mode(10)\n"
-									"3--acl mode(15)\n",
-									acl_mode);
+		"0--acl mode(off)\n 1--acl mode(5)\n"
+		"2--acl mode(10)\n 3--acl mode(15)\n",
+		acl_mode);
 	return ret;
 }
 
@@ -289,14 +287,11 @@ static ssize_t hbm_show(struct device *dev,
 	hbm_mode = dsi_display_get_hbm_mode(connector);
 
 	ret = scnprintf(buf, PAGE_SIZE, "hbm mode = %d\n"
-											"0--hbm mode(off)\n"
-											"1--hbm mode(XX)\n"
-											"2--hbm mode(XX)\n"
-											"3--hbm mode(XX)\n"
-											"4--hbm mode(XX)\n"
-											"5--hbm mode(670)\n",
-											hbm_mode);
-	return ret;
+			"0--hbm mode(off)\n 1--hbm mode(XX)\n"
+			"2--hbm mode(XX)\n 3--hbm mode(XX)\n"
+			"4--hbm mode(XX)\n 5--hbm mode(670)\n",
+			hbm_mode);
+		return ret;
 }
 
 static ssize_t hbm_store(struct device *dev,
@@ -365,7 +360,7 @@ static ssize_t seed_lp_show(struct device *dev,
 									"0--seed lp mode(mode0)\n"
 									"1--seed lp mode(mode1)\n"
 									"2--seed lp mode(mode2)\n",
-									seed_lp_mode);
+			seed_lp_mode);
 	return ret;
 }
 static ssize_t hbm_brightness_show(struct device *dev,
@@ -412,7 +407,7 @@ static ssize_t op_friginer_print_hbm_show(struct device *dev,
 	ret = scnprintf(buf, PAGE_SIZE, "OP_FP mode = %d\n"
 									"0--finger-hbm mode(off)\n"
 									"1--finger-hbm mode(600)\n",
-									op_hbm_mode);
+			op_hbm_mode);
 	return ret;
 }
 
@@ -445,7 +440,14 @@ static ssize_t aod_show(struct device *dev,
 
 	aod_mode = dsi_display_get_aod_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", aod_mode);
+	ret = scnprintf(buf, PAGE_SIZE, "AOD mode = %d\n"
+									"0--AOD MODE(OFF)\n"
+									"1--ALPM AOD MODE ON(10nit)\n"
+									"2--ALPM AOD MODE ON(20nit)\n"
+									"3--ALPM AOD MODE ON(30nit)\n"
+									"4--ALPM AOD MODE ON(40nit)\n"
+									"5--HLPM AOD MODE ON(50nit)\n",
+			aod_mode);
 	return ret;
 }
 
@@ -479,7 +481,7 @@ static ssize_t aod_disable_show(struct device *dev,
 	ret = scnprintf(buf, PAGE_SIZE, "AOD disable = %d\n"
 									"0--AOD enable\n"
 									"1--AOD disable\n",
-									aod_disable);
+			aod_disable);
 	return ret;
 }
 
@@ -515,7 +517,7 @@ static ssize_t DCI_P3_show(struct device *dev,
 	ret = scnprintf(buf, PAGE_SIZE, "dci-p3 mode = %d\n"
 									"0--dci-p3 mode Off\n"
 									"1--dci-p3 mode On\n",
-									dci_p3_mode);
+			dci_p3_mode);
 	return ret;
 }
 
@@ -551,7 +553,7 @@ static ssize_t night_mode_show(struct device *dev,
 	ret = scnprintf(buf, PAGE_SIZE, "night mode = %d\n"
 									"0--night mode Off\n"
 									"1--night mode On\n",
-									night_mode);
+			night_mode);
 	return ret;
 }
 
@@ -582,12 +584,13 @@ static ssize_t native_display_p3_mode_show(struct device *dev,
 	int ret = 0;
 	int native_display_p3_mode = 0;
 
-	native_display_p3_mode = dsi_display_get_native_display_p3_mode(connector);
+	native_display_p3_mode =
+		dsi_display_get_native_display_p3_mode(connector);
 
 	ret = scnprintf(buf, PAGE_SIZE, "native display p3 mode = %d\n"
 									"0--native display p3 mode Off\n"
 									"1--native display p3 mode On\n",
-									native_display_p3_mode);
+			native_display_p3_mode);
 	return ret;
 }
 
@@ -604,9 +607,11 @@ static ssize_t native_display_p3_mode_store(struct device *dev,
 		return ret;
 	}
 
-	ret = dsi_display_set_native_display_p3_mode(connector, native_display_p3_mode);
+	ret = dsi_display_set_native_display_p3_mode(connector,
+		native_display_p3_mode);
 	if (ret)
-		pr_err("set native_display_p3  mode(%d) fail\n", native_display_p3_mode);
+		pr_err("set native_display_p3  mode(%d) fail\n",
+		native_display_p3_mode);
 
 	return count;
 }
@@ -617,12 +622,13 @@ static ssize_t native_display_wide_color_mode_show(struct device *dev,
 	int ret = 0;
 	int native_display_wide_color_mode = 0;
 
-	native_display_wide_color_mode = dsi_display_get_native_display_wide_color_mode(connector);
+	native_display_wide_color_mode =
+		dsi_display_get_native_display_wide_color_mode(connector);
 
 	ret = scnprintf(buf, PAGE_SIZE, "native display wide color mode = %d\n"
 									"0--native display wide color mode Off\n"
 									"1--native display wide color mode On\n",
-									native_display_wide_color_mode);
+			native_display_wide_color_mode);
 	return ret;
 }
 
@@ -639,9 +645,11 @@ static ssize_t native_display_loading_effect_mode_store(struct device *dev,
 		return ret;
 	}
 
-	ret = dsi_display_set_native_loading_effect_mode(connector, native_display_loading_effect_mode);
+	ret = dsi_display_set_native_loading_effect_mode(connector,
+			 native_display_loading_effect_mode);
 	if (ret)
-		pr_err("set loading effect  mode(%d) fail\n", native_display_loading_effect_mode);
+		pr_err("set loading effect  mode(%d) fail\n",
+		native_display_loading_effect_mode);
 
 	return count;
 }
@@ -653,12 +661,14 @@ static ssize_t native_display_loading_effect_mode_show(struct device *dev,
 	int ret = 0;
 	int native_display_loading_effect_mode = 0;
 
-	native_display_loading_effect_mode = dsi_display_get_native_display_loading_effect_mode(connector);
+	native_display_loading_effect_mode =
+	dsi_display_get_native_display_loading_effect_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display loading effect mode = %d\n"
-									"0--native display loading effect mode Off\n"
-									"1--native display loading effect mode On\n",
-									native_display_loading_effect_mode);
+	ret = scnprintf(buf, PAGE_SIZE,
+			"native display loading effect mode = %d\n"
+			"0--native display loading effect mode Off\n"
+			"1--native display loading effect mode On\n",
+			native_display_loading_effect_mode);
 	return ret;
 }
 
@@ -675,9 +685,11 @@ static ssize_t native_display_customer_p3_mode_store(struct device *dev,
 		return ret;
 	}
 
-	ret = dsi_display_set_customer_p3_mode(connector, native_display_customer_p3_mode);
+	ret = dsi_display_set_customer_p3_mode(connector,
+			native_display_customer_p3_mode);
 	if (ret)
-		pr_err("set customer p3  mode(%d) fail\n", native_display_customer_p3_mode);
+		pr_err("set customer p3  mode(%d) fail\n",
+		native_display_customer_p3_mode);
 
 	return count;
 }
@@ -689,12 +701,14 @@ static ssize_t native_display_customer_p3_mode_show(struct device *dev,
 	int ret = 0;
 	int native_display_customer_p3_mode = 0;
 
-	native_display_customer_p3_mode = dsi_display_get_customer_p3_mode(connector);
+	native_display_customer_p3_mode =
+			dsi_display_get_customer_p3_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display customer p3 mode = %d\n"
-									"0--native display customer p3 mode Off\n"
-									"1--native display customer p3 mode On\n",
-									native_display_customer_p3_mode);
+	ret = scnprintf(buf, PAGE_SIZE,
+		"native display customer p3 mode = %d\n"
+		"0--native display customer p3 mode Off\n"
+		"1--native display customer p3 mode On\n",
+		native_display_customer_p3_mode);
 	return ret;
 }
 static ssize_t native_display_customer_srgb_mode_store(struct device *dev,
@@ -710,9 +724,11 @@ static ssize_t native_display_customer_srgb_mode_store(struct device *dev,
 		return ret;
 	}
 
-	ret = dsi_display_set_customer_srgb_mode(connector, native_display_customer_srgb_mode);
+	ret = dsi_display_set_customer_srgb_mode(connector,
+			native_display_customer_srgb_mode);
 	if (ret)
-		pr_err("set customer srgb  mode(%d) fail\n", native_display_customer_srgb_mode);
+		pr_err("set customer srgb  mode(%d) fail\n",
+		native_display_customer_srgb_mode);
 
 	return count;
 }
@@ -724,12 +740,14 @@ static ssize_t native_display_customer_srgb_mode_show(struct device *dev,
 	int ret = 0;
 	int native_display_customer_srgb_mode = 0;
 
-	native_display_customer_srgb_mode = dsi_display_get_customer_srgb_mode(connector);
+	native_display_customer_srgb_mode =
+			dsi_display_get_customer_srgb_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display customer srgb mode = %d\n"
-									"0--native display customer srgb mode Off\n"
-									"1--native display customer srgb mode On\n",
-									native_display_customer_srgb_mode);
+	ret = scnprintf(buf, PAGE_SIZE,
+		"native display customer srgb mode = %d\n"
+		"0--native display customer srgb mode Off\n"
+		"1--native display customer srgb mode On\n",
+		native_display_customer_srgb_mode);
 	return ret;
 }
 
@@ -747,9 +765,11 @@ static ssize_t native_display_wide_color_mode_store(struct device *dev,
 		return ret;
 	}
 
-	ret = dsi_display_set_native_display_wide_color_mode(connector, native_display_wide_color_mode);
+	ret = dsi_display_set_native_display_wide_color_mode(connector,
+			native_display_wide_color_mode);
 	if (ret)
-		pr_err("set native_display_p3  mode(%d) fail\n", native_display_wide_color_mode);
+		pr_err("set native_display_p3  mode(%d) fail\n",
+		native_display_wide_color_mode);
 
 	return count;
 }
@@ -761,12 +781,13 @@ static ssize_t native_display_srgb_color_mode_show(struct device *dev,
 	int ret = 0;
 	int native_display_srgb_color_mode = 0;
 
-	native_display_srgb_color_mode = dsi_display_get_native_display_srgb_color_mode(connector);
+	native_display_srgb_color_mode =
+		dsi_display_get_native_display_srgb_color_mode(connector);
 
 	ret = scnprintf(buf, PAGE_SIZE, "native display srgb color mode = %d\n"
 									"0--native display srgb color mode Off\n"
 									"1--native display srgb color mode On\n",
-									native_display_srgb_color_mode);
+			native_display_srgb_color_mode);
 	return ret;
 }
 
@@ -783,9 +804,11 @@ static ssize_t native_display_srgb_color_mode_store(struct device *dev,
 		return ret;
 	}
 
-	ret = dsi_display_set_native_display_srgb_color_mode(connector, native_display_srgb_color_mode);
+	ret = dsi_display_set_native_display_srgb_color_mode(connector,
+		 native_display_srgb_color_mode);
 	if (ret)
-		pr_err("set native_display_srgb  mode(%d) fail\n", native_display_srgb_color_mode);
+		pr_err("set native_display_srgb  mode(%d) fail\n",
+		native_display_srgb_color_mode);
 
 	return count;
 }
@@ -804,7 +827,9 @@ static ssize_t gamma_test_show(struct device *dev,
 		if (ret)
 			pr_err("Failed to update gamma para!\n");
 
-		if ((gamma_para[0][18] == 0xFF) && (gamma_para[0][19] == 0xFF) && (gamma_para[0][20] == 0xFF))
+		if ((gamma_para[0][18] == 0xFF) &&
+			(gamma_para[0][19] == 0xFF) &&
+			(gamma_para[0][20] == 0xFF))
 			gamma_test_flag = 0;
 		else
 			gamma_test_flag = 1;
@@ -812,13 +837,16 @@ static ssize_t gamma_test_show(struct device *dev,
 		dsi_display_get_serial_number(connector);
 		panel_stage_info = dsi_display_get_stage_info(connector);
 
-		if ((panel_stage_info == 0x07) || (panel_stage_info == 0x10) ||
-			(panel_stage_info == 0x11) || (panel_stage_info == 0x16))
+		if ((panel_stage_info == 0x07) ||
+			(panel_stage_info == 0x10) ||
+			(panel_stage_info == 0x11) ||
+			(panel_stage_info == 0x16))
 			pvt_mp_panel_flag = 1;
 		else
 			pvt_mp_panel_flag = 0;
 
-		ret = scnprintf(buf, PAGE_SIZE, "%d\n", (gamma_test_flag << 1) + pvt_mp_panel_flag);
+		ret = scnprintf(buf, PAGE_SIZE,
+		 "%d\n", (gamma_test_flag << 1) + pvt_mp_panel_flag);
 	} else {
 		ret = scnprintf(buf, PAGE_SIZE, "%d\n", 3);
 		pr_err("Gamma test is not supported!\n");
@@ -891,19 +919,24 @@ static ssize_t panel_serial_number_show(struct device *dev,
 			stage_string_info = "STAGE: PVT/MP";
 
 		ret = scnprintf(buf, PAGE_SIZE,
-		"%04d/%02d/%02d\n%02d:%02d:%02d:%03d.%01d\n%s\nID: %02X %02X %02X\n DDIC_Check_Result: %s\n",
-					panel_year, panel_mon, panel_day, panel_hour, panel_min,
-						panel_sec, panel_msec_int, panel_msec_rem,
-							stage_string_info, panel_code_info,
-								panel_stage_info, panel_production_info,
-								ddic_check_result);
+		"%04d/%02d/%02d\n%02d:%02d:%02d:%03d.%01d\n%s\n"
+			"ID: %02X %02X %02X\n DDIC_Check_Result: %s\n",
+					panel_year, panel_mon, panel_day,
+					panel_hour, panel_min, panel_sec,
+					panel_msec_int, panel_msec_rem,
+					stage_string_info, panel_code_info,
+					panel_stage_info, panel_production_info,
+					ddic_check_result);
 	} else {
-		ret = scnprintf(buf, PAGE_SIZE, "%04d/%02d/%02d %02d:%02d:%02d\n",
-				panel_year, panel_mon, panel_day, panel_hour, panel_min, panel_sec);
+		ret = scnprintf(buf, PAGE_SIZE,
+				"%04d/%02d/%02d %02d:%02d:%02d\n",
+				panel_year, panel_mon, panel_day,
+				panel_hour, panel_min, panel_sec);
 	}
 
 	pr_err("panel year = %d, mon = %d, day = %d, hour = %d, min = %d, msec = %d.%d  , ddic_x = %d , ddic_y = %d\n",
-		panel_year, panel_mon, panel_day, panel_hour, panel_min, panel_msec_int,
+		panel_year, panel_mon, panel_day,
+		panel_hour, panel_min, panel_msec_int,
 		panel_msec_rem, ddic_x, ddic_y);
 
 	return ret;
@@ -916,7 +949,8 @@ static ssize_t panel_serial_number_AT_show(struct device *dev,
 	int ret = 0;
 	uint64_t serial_number = 0;
 
-	ret = scnprintf(buf, PAGE_SIZE, "%llu\n", dsi_display_get_serial_number_id(serial_number));
+	ret = scnprintf(buf, PAGE_SIZE, "%llu\n",
+	dsi_display_get_serial_number_id(serial_number));
 
 	return ret;
 }
@@ -1054,9 +1088,9 @@ static ssize_t dsi_cmd_log_switch_show(struct device *dev,
 	int ret = 0;
 
 	ret = scnprintf(buf, PAGE_SIZE, "dsi cmd log switch = %d\n"
-									"0     -- dsi cmd log switch off\n"
-									"other -- dsi cmd log switch on\n",
-										dsi_cmd_log_enable);
+		"0     -- dsi cmd log switch off\n"
+		"other -- dsi cmd log switch on\n",
+		dsi_cmd_log_enable);
 
 	return ret;
 }
@@ -1082,7 +1116,7 @@ static ssize_t dynamic_dsitiming_show(struct device *dev,
 	int ret = 0;
 
 	ret = scnprintf(buf, PAGE_SIZE, "current_freq = %d\n",
-											current_freq);
+			current_freq);
 	return ret;
 }
 
@@ -1129,10 +1163,10 @@ static ssize_t panel_mismatch_show(struct device *dev,
 	dsi_display_panel_mismatch_check(connector);
 
 	wrong_panel = dsi_display_panel_mismatch(connector);
-	ret = scnprintf(buf, PAGE_SIZE, "panel mismatch = %d\n"
-									"0--(panel match)\n"
-									"1--(panel mismatch)\n",
-									wrong_panel);
+	ret = scnprintf(buf, PAGE_SIZE,
+			"panel mismatch = %d\n 0--(panel match)\n"
+			"1--(panel mismatch)\n",
+			wrong_panel);
 	return ret;
 }
 
@@ -1145,7 +1179,8 @@ int op_dither_enable;
 static ssize_t dim_alpha_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	return snprintf(buf, PAGE_SIZE, "%d\n", oneplus_get_panel_brightness_to_alpha());
+	return snprintf(buf, PAGE_SIZE, "%d\n",
+		oneplus_get_panel_brightness_to_alpha());
 }
 
 static ssize_t dim_alpha_store(struct device *dev,
@@ -1169,10 +1204,10 @@ static ssize_t force_screenfp_show(struct device *dev,
 
 	oneplus_force_screenfp = dsi_display_get_fp_hbm_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "OP_FP mode = %d\n"
-									"0--finger-hbm mode(off)\n"
-									"1--finger-hbm mode(600)\n",
-									oneplus_force_screenfp);
+	ret = scnprintf(buf, PAGE_SIZE,
+			"OP_FP mode = %d\n 0--finger-hbm mode(off)\n"
+			"1--finger-hbm mode(600)\n",
+			oneplus_force_screenfp);
 	return snprintf(buf, PAGE_SIZE, "%d\n", oneplus_force_screenfp);
 }
 
