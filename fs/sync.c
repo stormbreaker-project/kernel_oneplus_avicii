@@ -215,9 +215,10 @@ int vfs_fsync(struct file *file, int datasync)
 }
 EXPORT_SYMBOL(vfs_fsync);
 
+/*2020-04-30 [OSP-5970]*/
 #ifdef CONFIG_ONEPLUS_HEALTHINFO
-extern void ohm_schedstats_record(int sched_type, int fg, u64 delta_ms);
-#endif
+extern void ohm_schedstats_record(int sched_type, struct task_struct *task, u64 delta_ms);
+#endif /*CONFIG_ONEPLUS_HEALTHINFO*/
 
 static int do_fsync(unsigned int fd, int datasync)
 {
@@ -233,10 +234,11 @@ static int do_fsync(unsigned int fd, int datasync)
 		fdput(f);
 		inc_syscfs(current);
 	}
+/*2020-06-20 [OSP-5970]**/
 #ifdef CONFIG_ONEPLUS_HEALTHINFO
-	ohm_schedstats_record(OHM_SCHED_FSYNC, current_is_fg(),
+	ohm_schedstats_record(OHM_SCHED_FSYNC, current,
 			jiffies_to_msecs(jiffies - oneplus_fsync_time));
-#endif
+#endif /*CONFIG_ONEPLUS_HEALTHINFO*/
 	return ret;
 }
 
