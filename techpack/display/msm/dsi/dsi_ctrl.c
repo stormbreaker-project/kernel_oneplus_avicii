@@ -1326,6 +1326,35 @@ static void dsi_kickoff_msg_tx(struct dsi_ctrl *dsi_ctrl,
 		}
 	}
 }
+static void print_cmd_desc(struct dsi_ctrl *dsi_ctrl, const struct mipi_dsi_msg *msg)
+{
+	char buf[1024];
+	int len = 0;
+	size_t i;
+	char *tx_buf = (char*)msg->tx_buf;
+
+	/* Packet Info */
+	len += snprintf(buf, sizeof(buf) - len,  "%02X ", msg->type);
+	/* Last bit */
+	len += snprintf(buf + len, sizeof(buf) - len, "%02X ", (msg->flags & MIPI_DSI_MSG_LASTCOMMAND) ? 1 : 0);
+	len += snprintf(buf + len, sizeof(buf) - len, "%02X ", msg->channel);
+	len += snprintf(buf + len, sizeof(buf) - len, "%02X ", (unsigned int)msg->flags);
+	/* Delay */
+	len += snprintf(buf + len, sizeof(buf) - len, "%02X ", msg->wait_ms);
+	len += snprintf(buf + len, sizeof(buf) - len, "%02X %02X ", msg->tx_len >> 8, msg->tx_len & 0x00FF);
+
+	/* Packet Payload */
+	for (i = 0 ; i < msg->tx_len ; i++) {
+		len += snprintf(buf + len, sizeof(buf) - len, "%02X ", tx_buf[i]);
+		/* Break to prevent show too long command */
+		if (i > 250)
+			break;
+	}
+
+	DSI_CTRL_ERR(dsi_ctrl, "%s\n", buf);
+}
+
+extern int dsi_cmd_log_enable;
 
 static void dsi_ctrl_validate_msg_flags(struct dsi_ctrl *dsi_ctrl,
 				const struct mipi_dsi_msg *msg,
@@ -1362,6 +1391,9 @@ static int dsi_message_tx(struct dsi_ctrl *dsi_ctrl,
 	u8 *buffer = NULL;
 	u32 cnt = 0;
 	u8 *cmdbuf;
+
+	if (dsi_cmd_log_enable)
+		print_cmd_desc(dsi_ctrl, msg);
 
 	/* Select the tx mode to transfer the command */
 	dsi_message_setup_tx_mode(dsi_ctrl, msg->tx_len, flags);
